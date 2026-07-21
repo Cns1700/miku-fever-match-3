@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Miku Match-3: Hatsune Fever</title>
+    <!-- FontAwesome for cute icons and symbols -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts for custom typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!-- Quicksand/Rajdhani/Audiowide added for the results certificate's
+         per-character typography (see CERT_TYPOGRAPHY in miku-logic.js) —
+         Fredoka/Orbitron/Share Tech Mono were already in use elsewhere. -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&family=Orbitron:wght@400..900&family=Share+Tech+Mono&family=Quicksand:wght@300..700&family=Rajdhani:wght@300;400;500;600;700&family=Audiowide&display=swap" rel="stylesheet">
+    <!-- Consolidated External Stylesheet -->
+    <link rel="stylesheet" href="miku-style.css">
+</head>
+<body class="app-body">
+
+    <!-- Ambient drifting-icon particle backdrop; purely decorative -->
+    <div id="particleField" class="particle-field" aria-hidden="true"></div>
+
+    <!-- HEADER & AUDIO CONTROL BAR -->
+    <header class="app-header">
+        <button id="soundToggleBtn" type="button" data-i18n="header.soundToggleLabel" data-i18n-attr="aria-label" aria-label="Toggle Synthesizer Sound" class="sound-toggle-btn">
+            <i id="soundIcon" class="fas fa-volume-up icon-active" aria-hidden="true"></i>
+        </button>
+        <span id="soundStatusText" class="sound-status-text" data-i18n="header.soundActive">Synth Audio Active</span>
+        <button id="langToggleBtn" type="button" class="lang-toggle-btn" data-i18n="header.langToggleLabel" data-i18n-attr="aria-label" aria-label="Switch language">EN</button>
+    </header>
+
+    <!-- MAIN APP VIEWPORTS -->
+    <main id="appContainer" class="main-container">
+
+        <!-- SCREEN 1: CHARACTER SELECTION ROSTER -->
+        <section id="selectionScreen" class="selection-screen">
+            <!-- EDIT HERE: the badge/title/description text below is plain
+                 copy — change it directly, no script changes needed. -->
+            <header class="selection-header">
+                <span class="project-badge" data-i18n="roster.badge">Vocaloid Match-3 Project</span>
+                <h1 class="main-title"><span data-i18n="roster.titleLine1">MIKU</span> <span class="highlight-cyan" data-i18n="roster.titleLine2">FEVER</span></h1>
+                <p class="project-description" data-i18n="roster.tagline">
+                    A free non-commercial fanmade match-3 puzzle game featuring Hatsune Miku and her alternate outfits. Choose your favorite Miku variant and play through themed stages with unique aesthetics and challenges!
+                </p>
+            </header>
+
+            <!-- Character Choices Grid -->
+            <div class="character-grid">
+
+                <!-- CARD 1: CLASSIC MIKU -->
+                <div data-char="classic" class="character-card classic-card" role="button" tabindex="0">
+                    <div class="card-gradient"></div>
+                    <article class="card-content">
+                        <div class="icon-wrapper classic-icon">
+                            <span aria-hidden="true">🌐</span>
+                        </div>
+                        <h3 class="card-title" data-i18n="character.classic.name">Classic Miku</h3>
+                        <p class="card-subtitle" data-i18n="character.classic.title">Virtual Diva #01</p>
+                        <p class="card-body-text" data-i18n="character.classic.desc">
+                            Futuristic vibes with cyan aesthetics. Match negi leeks, microphones, curious cats, and wifi signals &mdash; plus the lucky number 39.
+                        </p>
+                    </article>
+                    <figure class="card-portrait" role="img" data-i18n="character.classic.portraitAlt" data-i18n-attr="aria-label" aria-label="Classic Miku portrait"></figure>
+                    <span class="card-cta text-classic" data-i18n="character.classic.cta">Play Classic &rarr;</span>
+                </div>
+
+                <!-- CARD 2: SAKURA MIKU -->
+                <div data-char="sakura" class="character-card sakura-card" role="button" tabindex="0">
+                    <div class="card-gradient"></div>
+                    <article class="card-content">
+                        <div class="icon-wrapper sakura-icon">
+                            <span aria-hidden="true">🌸</span>
+                        </div>
+                        <h3 class="card-title" data-i18n="character.sakura.name">Sakura Miku</h3>
+                        <p class="card-subtitle" data-i18n="character.sakura.title">Springtime Blossom</p>
+                        <p class="card-body-text" data-i18n="character.sakura.desc">
+                            Sweet pastel-pink board dressed in cherry blossoms. Match sakura blooms, sweet mochi, fresh cherries, and cozy temperature charms.
+                        </p>
+                    </article>
+                    <figure class="card-portrait" role="img" data-i18n="character.sakura.portraitAlt" data-i18n-attr="aria-label" aria-label="Sakura Miku portrait"></figure>
+                    <span class="card-cta text-sakura" data-i18n="character.sakura.cta">Play Sakura &rarr;</span>
+                </div>
+
+                <!-- CARD 3: NIGHTCORD 25-JI MIKU -->
+                <div data-char="nightcord" class="character-card nightcord-card" role="button" tabindex="0">
+                    <div class="card-gradient"></div>
+                    <article class="card-content">
+                        <div class="icon-wrapper nightcord-icon">
+                            <span aria-hidden="true">🌌</span>
+                        </div>
+                        <h3 class="card-title" data-i18n="character.nightcord.name">25-ji Miku</h3>
+                        <p class="card-subtitle" data-i18n="character.nightcord.title">Void World</p>
+                        <p class="card-body-text" data-i18n="character.nightcord.desc">
+                            A void theme born from silent echoes. Match delicate ribbons, hourglasses, memory photos, and glitching gear icons.
+                        </p>
+                    </article>
+                    <figure class="card-portrait" role="img" data-i18n="character.nightcord.portraitAlt" data-i18n-attr="aria-label" aria-label="25-ji Miku portrait"></figure>
+                    <span class="card-cta text-nightcord" data-i18n="character.nightcord.cta">Play 25-ji &rarr;</span>
+                </div>
+
+                <!-- CARD 4: SNOW MIKU -->
+                <div data-char="snow" class="character-card snow-card" role="button" tabindex="0">
+                    <div class="card-gradient"></div>
+                    <article class="card-content">
+                        <div class="icon-wrapper snow-icon">
+                            <span aria-hidden="true">⛄</span>
+                        </div>
+                        <h3 class="card-title" data-i18n="character.snow.name">Snow Miku</h3>
+                        <p class="card-subtitle" data-i18n="character.snow.title">Winter Wonderland</p>
+                        <p class="card-body-text" data-i18n="character.snow.desc">
+                            A frosty, shimmering aesthetic of blue and silver ice. Match sparkling snowflakes, cozy mittens, winter rabbits, and crimson winter charms.
+                        </p>
+                    </article>
+                    <figure class="card-portrait" role="img" data-i18n="character.snow.portraitAlt" data-i18n-attr="aria-label" aria-label="Snow Miku portrait"></figure>
+                    <span class="card-cta text-snow" data-i18n="character.snow.cta">Play Snow &rarr;</span>
+                </div>
+
+                <!-- CARD 5: RACING MIKU -->
+                <div data-char="racing" class="character-card racing-card" role="button" tabindex="0">
+                    <div class="card-gradient"></div>
+                    <article class="card-content">
+                        <div class="icon-wrapper racing-icon">
+                            <span aria-hidden="true">🏆</span>
+                        </div>
+                        <h3 class="card-title" data-i18n="character.racing.name">Racing Miku</h3>
+                        <p class="card-subtitle" data-i18n="character.racing.title">Mechanic Enthusiast</p>
+                        <p class="card-body-text" data-i18n="character.racing.desc">
+                            High-octane neon orange and emerald green. Match checkered flags, speedy cars, racing wheels, and first-place trophies!
+                        </p>
+                    </article>
+                    <figure class="card-portrait" role="img" data-i18n="character.racing.portraitAlt" data-i18n-attr="aria-label" aria-label="Racing Miku portrait"></figure>
+                    <span class="card-cta text-racing" data-i18n="character.racing.cta">Play Racing &rarr;</span>
+                </div>
+
+                <!-- CARD 6: SPACE SINGER MIKU -->
+                <div data-char="space" class="character-card space-card" role="button" tabindex="0">
+                    <div class="card-gradient"></div>
+                    <article class="card-content">
+                        <div class="icon-wrapper space-icon">
+                            <span aria-hidden="true">☄️</span>
+                        </div>
+                        <h3 class="card-title" data-i18n="character.space.name">Space Singer</h3>
+                        <p class="card-subtitle" data-i18n="character.space.title">Galactic Odyssey</p>
+                        <p class="card-body-text" data-i18n="character.space.desc">
+                            Deep galaxy purples and sparkling solar flares. Match astrophysics charts, falling stars, planet, and mysterious cosmic numerals.
+                        </p>
+                    </article>
+                    <figure class="card-portrait" role="img" data-i18n="character.space.portraitAlt" data-i18n-attr="aria-label" aria-label="Space Singer portrait"></figure>
+                    <span class="card-cta text-space" data-i18n="character.space.cta">Play Space &rarr;</span>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- SCREEN 1.5: GAME MODE SELECTION -->
+        <section id="modeSelectScreen" class="selection-screen hidden">
+            <header class="selection-header">
+                <button id="backToRosterFromModeBtn" type="button" class="btn-utility flex-center gap-1">
+                    <i class="fas fa-chevron-left text-xxs" aria-hidden="true"></i> <span data-i18n="nav.roster">Roster</span>
+                </button>
+                <h1 class="main-title"><span data-i18n="modeSelect.heading1">CHOOSE YOUR</span> <span class="highlight-cyan" data-i18n="modeSelect.heading2">MODE</span></h1>
+                <p class="project-description" id="modeSelectCharLabel">Playing as Classic Miku</p>
+            </header>
+
+            <div class="character-grid mode-grid">
+
+                <!-- MODE 1: STAGE CLEAR -->
+                <div data-mode="stageClear" class="character-card mode-card stage-clear-card" role="button" tabindex="0">
+                    <div class="card-gradient"></div>
+                    <article class="card-content">
+                        <div class="icon-wrapper mode-icon">
+                            <span aria-hidden="true">💠</span>
+                        </div>
+                        <h3 class="card-title" data-i18n="mode.stageClear.name">Stage Clear Mode</h3>
+                        <p class="card-subtitle" data-i18n="mode.stageClear.subtitle">The Progression Mode</p>
+                        <p class="card-body-text" data-i18n="mode.stageClear.desc">
+                            Reach the target score and clear themed obstacle tiles before you run out of moves. Chain matches during Fever Mode to earn bonus moves.
+                        </p>
+                    </article>
+                    <span class="card-cta" data-i18n="mode.stageClear.cta">Play Stage Clear &rarr;</span>
+                </div>
+
+                <!-- MODE 2: LIVE PERFORMANCE -->
+                <div data-mode="livePerformance" class="character-card mode-card live-performance-card" role="button" tabindex="0">
+                    <div class="card-gradient"></div>
+                    <article class="card-content">
+                        <div class="icon-wrapper mode-icon">
+                            <span aria-hidden="true">⚡</span>
+                        </div>
+                        <h3 class="card-title" data-i18n="mode.livePerformance.name">Live Performance Mode</h3>
+                        <p class="card-subtitle" data-i18n="mode.livePerformance.subtitle">High-Energy Time Attack</p>
+                        <p class="card-body-text" data-i18n="mode.livePerformance.desc">
+                            Race a shrinking 90-second timer. Matches add time back; a 5x combo triggers Fever Mode for double points and faster-falling tiles.
+                        </p>
+                    </article>
+                    <span class="card-cta" data-i18n="mode.livePerformance.cta">Play Live Performance &rarr;</span>
+                </div>
+
+                <!-- MODE 3: LEISURE MODE (internal data-mode/key stays "leisure") -->
+                <div data-mode="leisure" class="character-card mode-card leisure-card" role="button" tabindex="0">
+                    <div class="card-gradient"></div>
+                    <article class="card-content">
+                        <div class="icon-wrapper mode-icon">
+                            <span aria-hidden="true">🛋️</span>
+                        </div>
+                        <h3 class="card-title" data-i18n="mode.leisure.name">Leisure Mode</h3>
+                        <p class="card-subtitle" data-i18n="mode.leisure.subtitle">Casual &amp; Endless</p>
+                        <p class="card-body-text" data-i18n="mode.leisure.desc">
+                            No move limits, no timers, no game-overs. A relaxed sandbox to match at your own pace and watch the cascades.
+                        </p>
+                    </article>
+                    <span class="card-cta" data-i18n="mode.leisure.cta">Play Leisure Mode &rarr;</span>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- SCREEN 2: ACTIVE GAMEPLAY GRID -->
+        <section id="gameScreen" class="game-screen hidden">
+
+            <!-- PORTRAIT SIDEBAR PANEL -->
+            <aside id="portraitPanel" class="portrait-panel">
+
+                <!-- Dynamic background design decorative ambient glowing blobs -->
+                <div class="ambient-blob top-left-blob" id="portraitThemeBlob1" aria-hidden="true"></div>
+                <div class="ambient-blob bottom-right-blob" id="portraitThemeBlob2" aria-hidden="true"></div>
+
+                <!-- Navigation & Title HUD -->
+                <div class="panel-header">
+                    <button id="backToMenuBtn" type="button" class="btn-utility flex-center gap-1">
+                        <i class="fas fa-chevron-left text-xxs" aria-hidden="true"></i> <span data-i18n="nav.roster">Roster</span>
+                    </button>
+                    <span id="charTitleLabel" class="character-hud-badge">Classic Miku</span>
+                </div>
+
+                <!-- DYNAMIC PORTRAIT BLOCK + VERTICAL MANA BAR
+                     Portrait framing (position + zoom) is code-only now —
+                     no player-facing controls. #mikuPortraitImg is a plain
+                     div painted via CSS background-image; its position/size
+                     are set from each character's `sidebarPortraitFrame` in
+                     CHARACTER_THEMES (miku-logic.js, applyPortraitFraming(),
+                     called from selectCharacter()) — fully independent from
+                     the roster cards' `cardPortraitFrame`/
+                     applyCardPortraitFraming(). See the "PORTRAIT FRAMING"
+                     banner in miku-logic.js to retune a character's
+                     crop/zoom on either surface. -->
+                <div class="portrait-mana-row">
+                    <div class="portrait-column">
+                        <figure class="portrait-viewport">
+                            <div id="portraitAura" class="portrait-aura" aria-hidden="true"></div>
+                            <div class="portrait-float-wrapper">
+                                <div id="mikuPortraitImg" class="portrait-image" role="img" aria-label="Classic Miku portrait"></div>
+                            </div>
+                            <figcaption id="portraitCaption" class="sr-only">Classic Miku</figcaption>
+                        </figure>
+                    </div>
+
+                    <!-- Mana bar: fills bottom-to-top as the player matches this
+                         run's "charge icon" (shown below it) or clears themed
+                         tiles. At 100% the Special button lights up. -->
+                    <div class="mana-bar-wrapper">
+                        <div class="mana-bar-track" role="meter" aria-label="Special ability energy" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                            <div id="manaBarFill" class="mana-bar-fill"></div>
+                        </div>
+                        <img id="manaChargeIcon" class="mana-charge-hint" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBTAA7" alt="Icon that charges this ability">
+                        <button id="specialBtn" type="button" class="special-btn" disabled data-i18n-attr="title" data-i18n="special.buttonTitle" title="Charge the mana bar to unlock your special move">
+                            <span aria-hidden="true">✨</span> <span data-i18n="special.buttonLabel">Special</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- LIVE SCORE AND STATISTICS CARD -->
+                <div class="stats-panel-container">
+
+                    <!-- Scoring stats -->
+                    <div class="stats-card-block flex-between">
+                        <div>
+                            <span class="stat-meta-label" data-i18n="hud.totalScore">Total Score</span>
+                            <output id="scoreDisplay" class="digital-font stat-main-value">000000</output>
+                        </div>
+                        <div class="text-right hud-stage-only">
+                            <span class="stat-meta-label" data-i18n="hud.targetGoal">Target goal</span>
+                            <output id="goalDisplay" class="cyber-font stat-sub-value">1,500</output>
+                        </div>
+                    </div>
+
+                    <!-- Fever Energy Tracker: feverLevel (see miku-logic.js, section 7)
+                         still drives the bonus-round/milestone cadence and the
+                         per-level score popups — it's just no longer shown as a
+                         standing "Lv.X" badge here, since the raw count didn't
+                         mean anything to a player looking at it mid-run. -->
+                    <div class="fever-hud-block">
+                        <div class="flex-between font-semibold text-xs">
+                            <span class="fever-label flex-center gap-1">
+                                <i class="fas fa-fire anim-bounce" aria-hidden="true"></i> <span data-i18n="hud.feverProgress">FEVER PROGRESS</span>
+                            </span>
+                            <output id="feverProgressPercent" class="digital-font text-slate-400">0%</output>
+                        </div>
+                        <div class="fever-progress-track">
+                            <div id="feverBar" class="fever-progress-fill"></div>
+                        </div>
+                    </div>
+
+                    <!-- Level and Combos Grid -->
+                    <div class="hud-metrics-grid">
+                        <div class="metric-block text-center hud-stage-only">
+                            <span class="stat-meta-label" data-i18n="hud.stageLevel">Stage Level</span>
+                            <output id="levelDisplay" class="cyber-font font-bold text-lg block">1</output>
+                        </div>
+                        <div class="metric-block text-center">
+                            <span class="stat-meta-label" data-i18n="hud.currentCombo">Current Combo</span>
+                            <output id="comboDisplay" class="digital-font metric-combo-val text-lg block">0</output>
+                        </div>
+                    </div>
+                </div>
+
+                <p id="gameMessage" class="instruction-tip" data-i18n="hud.instructionTip">
+                    "Click or swipe two neighboring items to align 3 of a kind!"
+                </p>
+            </aside>
+
+            <!-- PLAYGRID CONTROLS & BOARD CONTAINER -->
+            <div class="board-view-wrapper flex-col">
+
+                <!-- HUD controls -->
+                <div class="board-top-hud flex-between">
+                    <div class="hud-left-group flex-center gap-4">
+                        <span id="movesLabel" class="moves-label font-bold flex-center hud-stage-only">
+                            <span class="hud-icon" aria-hidden="true">🎤</span> <span data-i18n="hud.movesLeft">Moves Left:</span> <output id="movesDisplay" class="digital-font text-yellow-400 font-bold ml-1.5">35</output>
+                        </span>
+                        <span id="timeLabel" class="moves-label font-bold flex-center hud-performance-only hidden">
+                            <span class="hud-icon" aria-hidden="true">🎤</span> <span data-i18n="hud.timeLeft">Time Left:</span> <output id="timeDisplay" class="digital-font text-yellow-400 font-bold ml-1.5">90</output><span data-i18n="hud.secondsSuffix">s</span>
+                        </span>
+                    </div>
+                    <div class="hud-right-group flex-center gap-2">
+                        <button id="howToPlayBtn" type="button" class="btn-utility flex-center gap-1" data-i18n-attr="title" data-i18n="hud.howToPlay" title="How To Play">
+                            <span aria-hidden="true">📋</span> <span data-i18n="hud.howToPlay">How To Play</span>
+                        </button>
+                        <button id="modesBtn" type="button" class="btn-utility flex-center gap-1">
+                            <i class="fas fa-list" aria-hidden="true"></i> <span data-i18n="hud.modes">Modes</span>
+                        </button>
+                        <button id="pauseBtn" type="button" class="btn-utility flex-center gap-1 hud-performance-only hidden">
+                            <i class="fas fa-pause" aria-hidden="true"></i> <span id="pauseBtnLabel" data-i18n="hud.pause">Pause</span>
+                        </button>
+                        <button id="endSessionBtn" type="button" class="btn-utility flex-center gap-1">
+                            <i class="fas fa-flag-checkered" aria-hidden="true"></i> <span data-i18n="hud.end">End</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Compact banner for the active timed challenge (themed-tile
+                     clear in Stage Clear, icon-match in Live Performance).
+                     Hidden whenever no challenge is running. -->
+                <div id="challengeBanner" class="challenge-banner hidden"></div>
+
+                <!-- MAIN MATCH-3 BOARD. Wrapped in .board-frame (rather than living
+                     directly in .board-view-wrapper) purely so #specialTimerBadge
+                     below has a position:relative ancestor sized to the board that
+                     ISN'T also overflow:hidden like #boardBorder itself is — the
+                     badge needs to sit OUTSIDE the board's frame, so it can't be a
+                     child of the element that clips everything to the board's
+                     rounded corners. -->
+                <div class="board-frame">
+                <div class="board-container" id="boardBorder">
+
+                    <!-- Grid system layout -->
+                    <div id="match3Grid" class="board-grid-wrapper" role="grid" aria-label="Match-3 game board">
+                        <!-- Dynamic matrix generated programmatically -->
+                    </div>
+
+                    <!-- Live Performance only: dims the board and blocks input while paused -->
+                    <div id="pauseOverlay" class="pause-overlay hidden" aria-live="polite" data-i18n="pause.paused">PAUSED</div>
+
+                    <!-- How-To-Play: shown automatically when a mode starts, reopenable via the 📋 button -->
+                    <div id="howToPlayOverlay" class="how-to-play-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="howToPlayHeading">
+                        <div class="overlay-modal-block">
+                            <h2 id="howToPlayHeading" class="cyber-font heading-modal" data-i18n="howToPlay.heading">How To Play</h2>
+                            <div id="howToPlayBody" class="overlay-description"></div>
+                            <button id="howToPlayCloseBtn" type="button" class="btn-action bg-grad-miku text-slate-950" data-i18n="howToPlay.gotIt">Got it!</button>
+                        </div>
+                    </div>
+
+                    <!-- OVERLAY MODAL: WIN / LOSS STAGES -->
+                    <div id="resultsOverlay" class="results-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="resultsHeading">
+                        <div class="overlay-modal-block">
+                            <span id="victoryBadge" class="victory-banner-badge">Stage Clear!</span>
+                            <h2 id="resultsHeading" class="cyber-font heading-modal">CONGRATULATIONS!</h2>
+
+                            <div class="overlay-score-card">
+                                <span class="overlay-score-label" data-i18n="results.finalScoreLabel">Final Score</span>
+                                <output id="resultsScore" class="digital-font overlay-score-value">000,000</output>
+                            </div>
+                            <p id="resultsDetail" class="overlay-description">You matched with beautiful digital precision.</p>
+
+                            <div class="overlay-button-group flex-center gap-3">
+                                <button id="playAgainBtn" type="button" class="btn-action bg-grad-miku text-slate-950" data-i18n="results.playAgain">Play Again</button>
+                                <button id="overlayBackToRosterBtn" type="button" class="btn-utility font-semibold" data-i18n="results.backToRoster">Back to Roster</button>
+                            </div>
+
+                            <!-- Shareable results certificate: rendered on-the-fly onto a
+                                 canvas in miku-logic.js (buildCertificateCanvas), no image is
+                                 kept in the DOM until the player asks to download/copy it.
+                                 To change the CHARACTER IMAGE drawn onto the certificate,
+                                 edit CERTIFICATE_PORTRAIT_IMAGES in miku-logic.js (search
+                                 that file for "EDIT HERE to change the image used on the
+                                 downloadable/copyable results CERTIFICATE"). -->
+                            <div class="overlay-button-group flex-center gap-3">
+                                <button id="downloadCertificateBtn" type="button" class="btn-utility font-semibold" data-i18n="results.downloadCertificate">Download Certificate</button>
+                                <button id="copyCertificateBtn" type="button" class="btn-utility font-semibold" data-i18n="results.copyToClipboard">Copy to Clipboard</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Countdown badge for the two timed character-buff specials —
+                     Miku's Harmony Wave and Space Singer's Cosmic Gravity (both
+                     15s). A sibling of #boardBorder (not a child — see the
+                     .board-frame comment above) so it can sit outside the board's
+                     top-right corner instead of being clipped to it. Hidden the
+                     rest of the time; shown/driven by startSpecialTimerBadge()/
+                     stopSpecialTimerBadge() in miku-logic.js, which fill in the
+                     emoji + seconds below. -->
+                <div id="specialTimerBadge" class="special-timer-badge hidden" role="timer" aria-label="Special ability time remaining">
+                    <span id="specialTimerEmoji" class="special-timer-emoji" aria-hidden="true">🎤</span>
+                    <output id="specialTimerValue" class="special-timer-value">15</output>
+                </div>
+                </div>
+
+                <div class="board-footer-tips flex-between text-xs">
+                    <span data-i18n="hud.footerTip1">Fever milestones &amp; timed challenges grant bonus moves/time!</span>
+                    <span data-i18n="hud.footerTip2">No moves? We'll auto-reshuffle!</span>
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- FOOTER LICENSE BAR -->
+    <!-- EDIT HERE: copyright line and footer link text are plain copy below.
+         Footer text color itself lives in miku-style.css (.footer-layout). -->
+    <footer class="app-footer">
+        <div class="footer-layout flex-between text-xs">
+            <span data-i18n="footer.copyright">&copy; 2026 Miku Fever Match-3. Free Non-Commercial Fanmade Project.</span>
+            <div class="footer-links flex-center gap-4">
+                <a href="https://craftpix.net/freebies/free-cyberpunk-energy-items-512x512-icon-pack/" target="_blank" rel="noopener" class="footer-hyperlink" data-i18n="footer.aestheticInspirations">Aesthetic Inspirations</a>
+                <span>&bull;</span>
+                <span data-i18n="footer.webAudioSynth">Web Audio API Synthesizer</span>
+            </div>
+        </div>
+        <!-- Row wrapper: lays the 4 dropdown headers below out side-by-side
+             instead of stacked. Only affects this row's own layout — each
+             dropdown's expanded list (.credits-list) is untouched. -->
+        <div class="credits-row">
+        <details class="credits-disclosure">
+            <summary data-i18n="footer.assetCredits">Asset Credits</summary>
+            <ul class="credits-list">
+                <li><a href="https://www.flaticon.com/free-icons/winter" title="winter icons" target="_blank" rel="noopener">Winter icons created by Triangle Squad &ndash; Flaticon</a></li>
+                <li><a href="https://www.flaticon.com/free-icons/mittens" title="mittens icons" target="_blank" rel="noopener">Mittens icons created by Freepik &ndash; Flaticon</a></li>
+                <li><a href="https://www.flaticon.com/free-icons/winter-red" title="winter red icons" target="_blank" rel="noopener">Winter red icons created by Freepik &ndash; Flaticon</a></li>
+                <li><a href="https://www.flaticon.com/free-icons/flower" title="flower icons" target="_blank" rel="noopener">Flower icons created by Vitaly Gorbachev &ndash; Flaticon</a></li>
+                <li><a href="https://www.flaticon.com/free-icons/mochi" title="mochi icons" target="_blank" rel="noopener">Mochi icons created by Vitaly Gorbachev &ndash; Flaticon</a></li>
+                <li><a href="https://www.flaticon.com/free-icons/food-and-restaurant" title="food and restaurant icons" target="_blank" rel="noopener">Food and restaurant icons created by Freepik &ndash; Flaticon</a></li>
+                <li><a href="https://www.flaticon.com/free-icons/cute" title="cute icons" target="_blank" rel="noopener">Cute icons created by Park Jisun &ndash; Flaticon</a></li>
+                <li><a href="https://www.flaticon.com/free-icons/leek" title="leek icons" target="_blank" rel="noopener">Leek icons created by Imogen.Oh &ndash; Flaticon</a></li>
+                <li><a href="https://www.flaticon.com/free-icons/isometric" title="isometric icons" target="_blank" rel="noopener">Isometric icons created by Ylivdesign &ndash; Flaticon</a></li>
+                <li><a href="https://www.flaticon.com/free-icons/wifi" title="wifi icons" target="_blank" rel="noopener">Wifi icons created by Moon.de &ndash; Flaticon</a></li>
+                <li><a href="https://www.flaticon.com/free-icons/microphone" title="microphone icons" target="_blank" rel="noopener">Microphone icons created by DinosoftLabs &ndash; Flaticon</a></li>
+                <li><a href="https://www.flaticon.com/free-icons/temperature" title="temperature icons" target="_blank" rel="noopener">Temperature icons created by Freepik &ndash; Flaticon</a></li>
+                <li><a href="https://www.flaticon.com/free-icons/rabbit" title="rabbit icons" target="_blank" rel="noopener">Rabbit icons created by Infinite Dendrogram &ndash; Flaticon</a></li>
+                <li><a href="https://www.flaticon.com/free-icons/sports-and-competition" title="sports and competition icons" target="_blank" rel="noopener">Sports and competition icons created by Freepik &ndash; Flaticon</a></li>
+                <li><a href="https://www.flaticon.com/free-icons/car-race" title="car race icons" target="_blank" rel="noopener">Car race icons created by Freepik &ndash; Flaticon</a></li>
+                <li><a href="https://www.flaticon.com/free-icons/car" title="car icons" target="_blank" rel="noopener">Car icons created by Freepik &ndash; Flaticon</a></li>
+                <li><a href="https://www.flaticon.com/free-icons/1st-place" title="1st place icons" target="_blank" rel="noopener">1st place icons created by Md Tanvirul Haque &ndash; Flaticon</a></li>
+                <li><a href="https://www.flaticon.com/free-icons/hourglass" title="hourglass icons" target="_blank" rel="noopener">Hourglass icons created by DinosoftLabs &ndash; Flaticon</a></li>
+                <li><a href="https://www.flaticon.com/free-icons/settings" title="settings icons" target="_blank" rel="noopener">Settings icons created by Freepik &ndash; Flaticon</a></li>
+                <li><a href="https://www.flaticon.com/free-icons/black-bow" title="black bow icons" target="_blank" rel="noopener">Black bow icons created by PixelVerse &ndash; Flaticon</a></li>
+                <li><a href="https://www.flaticon.com/free-icons/headband" title="headband icons" target="_blank" rel="noopener">Headband icons created by Laura Reen &ndash; Flaticon</a></li>
+                <li><a href="https://www.flaticon.com/free-icons/falling-star" title="falling star icons" target="_blank" rel="noopener">Falling star icons created by bukeicon &ndash; Flaticon</a></li>
+                <li><a href="https://www.flaticon.com/free-icons/astrophysics" title="astrophysics icons" target="_blank" rel="noopener">Astrophysics icons created by gravisio &ndash; Flaticon</a></li>
+                <li><a href="https://craftpix.net/freebies/free-cyberpunk-energy-items-512x512-icon-pack/" target="_blank" rel="noopener">Free Cyberpunk Energy Items 512x512 Icon Pack &ndash; CraftPix</a></li>
+            </ul>
+        </details>
+        <!-- Second credits list: the move-icon / time-icon bonus tiles added in the 7/14 revision -->
+        <details class="credits-disclosure">
+            <summary data-i18n="footer.iconCredits">Move &amp; Time Icon Credits</summary>
+            <ul class="credits-list">
+                <li><a href="https://www.flaticon.com/free-icons/miscellaneous" title="miscellaneous icons" target="_blank" rel="noopener">Miscellaneous icons created by Vector Stall &ndash; Flaticon</a></li>
+                <li><a href="https://www.flaticon.com/free-icons/music" title="music icons" target="_blank" rel="noopener">Music icons created by Freepik &ndash; Flaticon</a></li>
+                <li><a href="https://www.flaticon.com/free-icons/musical-notes" title="musical notes icons" target="_blank" rel="noopener">Musical notes icons created by Freepik &ndash; Flaticon</a></li>
+                <li><a href="https://www.flaticon.com/free-icons/rhythm" title="rhythm icons" target="_blank" rel="noopener">Rhythm icons created by Freepik &ndash; Flaticon</a></li>
+                <li><a href="https://www.flaticon.com/free-icons/ramadan" title="ramadan icons" target="_blank" rel="noopener">Ramadan icons created by Freepik &ndash; Flaticon</a></li>
+                <li><a href="https://www.flaticon.com/free-icons/emerald" title="emerald icons" target="_blank" rel="noopener">Emerald icons created by Icongeek26 &ndash; Flaticon</a></li>
+                <li><a href="https://www.flaticon.com/free-icons/plum" title="plum icons" target="_blank" rel="noopener">Plum icons created by amonrat rungreangfangsai &ndash; Flaticon</a></li>
+                <li><a href="https://www.flaticon.com/free-icons/sakura" title="sakura icons" target="_blank" rel="noopener">Sakura icons created by Freepik &ndash; Flaticon</a></li>
+                <li><a href="https://www.flaticon.com/free-icons/track" title="track icons" target="_blank" rel="noopener">Track icons created by Smashicons &ndash; Flaticon</a></li>
+                <li><a href="https://www.flaticon.com/free-icons/speed-meter" title="speed meter icons" target="_blank" rel="noopener">Speed meter icons created by kliwir art &ndash; Flaticon</a></li>
+                <li><a href="https://www.flaticon.com/free-icons/snow" title="snow icons" target="_blank" rel="noopener">Snow icons created by Freepik &ndash; Flaticon</a></li>
+                <li><a href="https://www.flaticon.com/free-icons/winter" title="winter icons" target="_blank" rel="noopener">Winter icons created by AbtoCreative &ndash; Flaticon</a></li>
+            </ul>
+        </details>
+        <!-- Third credits list: per-character swap/match/no-match/special sound
+             effects added in the 7/18 revision. Mixkit files used elsewhere in
+             this project don't require attribution under their license, so
+             only the Pixabay-sourced files are listed here. -->
+        <details class="credits-disclosure">
+            <summary data-i18n="footer.audioCredits">Audio Credits</summary>
+            <ul class="credits-list">
+                <li><a href="https://pixabay.com/users/benkirb-8692052/" target="_blank" rel="noopener">Sound Effect by Benjamin Adams &ndash; Pixabay</a></li>
+                <li><a href="https://pixabay.com/users/magiaz-10236927/" target="_blank" rel="noopener">Sound Effect by Mauricio P&oacute;voa &ndash; Pixabay</a></li>
+                <li><a href="https://pixabay.com/users/universfield-28281460/" target="_blank" rel="noopener">Sound Effect by Universfield &ndash; Pixabay</a></li>
+                <li><a href="https://pixabay.com/users/rescopicsound-45188866/" target="_blank" rel="noopener">Sound Effect by Rescopic Sound &ndash; Pixabay</a></li>
+                <li><a href="https://pixabay.com/users/bryansantosbreton-40689938/" target="_blank" rel="noopener">Sound Effect by Bryan Jesus De Los Santos Breton &ndash; Pixabay</a></li>
+                <li><a href="https://pixabay.com/users/tanweraman-29554143/" target="_blank" rel="noopener">Sound Effect by Aman Kumar &ndash; Pixabay</a></li>
+                <li><a href="https://pixabay.com/users/spinopel-46570060/" target="_blank" rel="noopener">Sound Effect by Spin Opel &ndash; Pixabay</a></li>
+                <li><a href="https://pixabay.com/users/dragon-studio-38165424/" target="_blank" rel="noopener">Sound Effect by DRAGON-STUDIO &ndash; Pixabay</a></li>
+                <li><a href="https://pixabay.com/users/freesound_community-46691455/" target="_blank" rel="noopener">Sound Effect by freesound_community &ndash; Pixabay</a></li>
+                <li><a href="https://pixabay.com/users/u_dn8ylcpe3v-48502954/" target="_blank" rel="noopener">Sound Effect by u_dn8ylcpe3v &ndash; Pixabay</a></li>
+                <li><a href="https://pixabay.com/users/mightuser-46744766/" target="_blank" rel="noopener">Sound Effect by Rahul &ndash; Pixabay</a></li>
+                <li><a href="https://pixabay.com/users/u_mgq59j5ayf-50948372/" target="_blank" rel="noopener">Sound Effect by u_mgq59j5ayf &ndash; Pixabay</a></li>
+            </ul>
+        </details>
+        <!-- Fourth credits list: results-certificate background photos/vectors. -->
+        <details class="credits-disclosure">
+            <summary data-i18n="footer.backgroundCredits">Certificate Background Credits</summary>
+            <ul class="credits-list">
+                <li><a href="https://www.magnific.com/free-vector/colorful-futuristic-background-with-shiny-particles_9260185.htm" target="_blank" rel="noopener">Colorful futuristic background with shiny particles &ndash; Magnific</a></li>
+                <li><a href="https://www.magnific.com/free-vector/floral-with-cherry-blossoms-full-bloom-pink_12157944.htm" target="_blank" rel="noopener">Floral with cherry blossoms in full bloom (pink) &ndash; Magnific</a></li>
+                <li><a href="https://unsplash.com/photos/close-up-of-intricate-clockwork-gears-and-roman-numerals-Qy8Y8RBWovk" target="_blank" rel="noopener">Clockwork gears &amp; roman numerals photo by Adhitya Sibikumar &ndash; Unsplash</a></li>
+                <li><a href="https://www.magnific.com/free-photo/snowflakes-colorful-lights_970845.htm" target="_blank" rel="noopener">Snowflakes colorful lights &ndash; Magnific</a></li>
+                <li><a href="https://unsplash.com/photos/time-lapse-of-cars-on-night-time-iZp4h1gXiEQ" target="_blank" rel="noopener">Time lapse of cars at night photo by Sanjeevan SatheesKumar &ndash; Unsplash</a></li>
+                <li><a href="https://unsplash.com/photos/a-planet-with-a-glowing-ring-in-deep-space-fKEywuUJNCQ" target="_blank" rel="noopener">Planet with a glowing ring in deep space photo by majed swan &ndash; Unsplash</a></li>
+            </ul>
+        </details>
+        </div>
+    </footer>
+
+    <!-- Language dictionary (English/Japanese) — must load before
+         miku-logic.js, which calls t()/applyTranslations() throughout. -->
+    <script src="i18n.js"></script>
+
+    <!-- Pre-encoded certificate images (base64 data: URIs) — must load before
+         miku-logic.js, which reads CERT_PORTRAIT_DATA/CERT_BACKGROUND_DATA
+         from it. See that file's header comment for why these are embedded
+         instead of just pointing at the v-j-rs/ files directly. -->
+    <script src="cert-assets.js"></script>
+
+    <!-- Modular Game Script -->
+    <script src="miku-logic.js"></script>
+</body>
+</html>
