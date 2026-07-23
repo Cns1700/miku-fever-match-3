@@ -138,7 +138,8 @@ const I18N = {
             currentCombo: "Current Combo",
             instructionTip: "“Click or swipe two neighboring items to align 3 of a kind!”",
             footerTip1: "Fever milestones & timed challenges grant bonus moves/time!",
-            footerTip2: "No moves? We'll auto-reshuffle!"
+            footerTip2: "No moves? We'll auto-reshuffle!",
+            footerTipLeisure: "Just relax and enjoy the cascades ✨"
         },
         special: {
             buttonLabel: "Special",
@@ -177,6 +178,12 @@ const I18N = {
                 "Match icons to fill your mana bar, then unleash your Special whenever you like."
             ]
         },
+        stageVictoryChoice: {
+            heading: "Stage 50 Clear — Victory!",
+            body: "Claim your certificate now, or keep climbing toward Stage 100 for a Legacy Certificate.",
+            claim: "Claim Certificate",
+            keepClimbing: "Keep Climbing"
+        },
         pause: {
             paused: "PAUSED"
         },
@@ -192,14 +199,24 @@ const I18N = {
             certCopied: "Copied!",
             certCopyFailed: "Copy failed",
             stageClearVictory: {
-                badge: "🏆 Stage Master!",
+                badge: "🎇 Stage Master!",
                 heading: "VICTORY!",
-                detail: "You conquered all {finalLevel} stages with a final score of {score}! A true Stage Clear champion."
+                detail: "You reached Stage {level} — a true Stage Clear Victory! Final score: {score}."
+            },
+            stageClearLegacyVictory: {
+                badge: "✨ {charName}'s Muse!",
+                heading: "PERFECT HARMONY!",
+                detail: "You conquered all {finalLevel} stages with a final score of {score}! A true Legacy Victory — {charName}'s Muse has been earned."
+            },
+            livePerformanceVictory: {
+                badge: "🎤 Performance Complete!",
+                heading: "BRAVO!",
+                detail: "You rocked the full performance for a final score of {score} with a longest chain of {bestCombo}! What a show."
             },
             livePerformanceOver: {
-                badge: "Time's Up!",
-                heading: "PERFORMANCE OVER",
-                detail: "You rocked the stage for a final score of {score} with a longest chain of {bestCombo}! Try to beat your record."
+                badge: "Performance Ended",
+                heading: "PERFORMANCE ENDED",
+                detail: "You ended the performance early with a final score of {score} and a longest chain of {bestCombo}. Finish the full 90 seconds next time to claim a win!"
             },
             leisureEnded: {
                 badge: "Session Ended",
@@ -254,6 +271,7 @@ const I18N = {
                 leisure: "Leisure Mode"
             },
             victorySuffix: " — Victory!",
+            legacyVictorySuffix: " — Perfect Harmony!",
             finalScore: "FINAL SCORE",
             footer: "Miku Fever Match-3 — a free fanmade project"
         }
@@ -360,7 +378,8 @@ const I18N = {
             currentCombo: "現在のコンボ",
             instructionTip: "「隣り合う2つのアイテムをクリックまたはスワイプして、3つ揃えよう！」",
             footerTip1: "フィーバーの節目やタイムチャレンジでボーナス手数・時間がもらえる！",
-            footerTip2: "手数がなくなったら自動でシャッフルします！"
+            footerTip2: "手数がなくなったら自動でシャッフルします！",
+            footerTipLeisure: "肩の力を抜いて、連鎖をゆっくり楽しんでね ✨"
         },
         special: {
             buttonLabel: "スペシャル",
@@ -399,6 +418,12 @@ const I18N = {
                 "アイコンをマッチさせてマナバーを満タンにし、好きなタイミングでスペシャルを発動しよう。"
             ]
         },
+        stageVictoryChoice: {
+            heading: "ステージ50クリア — 勝利！",
+            body: "今すぐ証明書を受け取るか、ステージ100を目指してさらに挑戦し、レガシー証明書を狙うこともできます。",
+            claim: "証明書を受け取る",
+            keepClimbing: "さらに挑戦する"
+        },
         pause: {
             paused: "一時停止中"
         },
@@ -414,14 +439,24 @@ const I18N = {
             certCopied: "コピーしました！",
             certCopyFailed: "コピーに失敗しました",
             stageClearVictory: {
-                badge: "🏆 ステージマスター！",
+                badge: "🎇 ステージマスター！",
                 heading: "勝利！",
-                detail: "全{finalLevel}ステージを最終スコア{score}でクリア！真のステージクリアチャンピオンだ。"
+                detail: "ステージ{level}に到達 — 真のステージクリア勝利！最終スコア：{score}。"
+            },
+            stageClearLegacyVictory: {
+                badge: "✨ {charName}のミューズ！",
+                heading: "パーフェクトハーモニー！",
+                detail: "全{finalLevel}ステージを最終スコア{score}で制覇！真のレガシー勝利 — {charName}のミューズを獲得した。"
+            },
+            livePerformanceVictory: {
+                badge: "🎤 パフォーマンス完遂！",
+                heading: "ブラボー！",
+                detail: "最終スコア{score}、最長コンボ{bestCombo}で、最後まで演じきった！見事なステージだった。"
             },
             livePerformanceOver: {
-                badge: "タイムアップ！",
-                heading: "パフォーマンス終了",
-                detail: "最終スコア{score}、最長コンボ{bestCombo}でステージを盛り上げた！記録更新を目指そう。"
+                badge: "パフォーマンス終了",
+                heading: "パフォーマンス中断",
+                detail: "最終スコア{score}、最長コンボ{bestCombo}で演奏を早めに切り上げた。次回は90秒をフルに使い切って勝利を目指そう！"
             },
             leisureEnded: {
                 badge: "セッション終了",
@@ -476,6 +511,7 @@ const I18N = {
                 leisure: "リラックスモード"
             },
             victorySuffix: " — 勝利！",
+            legacyVictorySuffix: " — パーフェクトハーモニー！",
             finalScore: "最終スコア",
             footer: "Miku Fever Match-3 — 無料のファンメイド作品"
         }

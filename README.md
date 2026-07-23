@@ -26,9 +26,13 @@ Plays entirely in the browser, no install, no account, no ads. **[Available in E
 ## Features
 
 - **6 playable Miku variants**, each with a fully distinct color palette, board icon set, music, sound effects, and character special ability.
-- **3 game modes**: Stage Clear (100 levels, move-limited), Live Performance (90-second time attack with a late-game difficulty ramp), and Leisure (no timer, no game over — just relax).
+- **3 game modes**:
+  - **Stage Clear** — climb 100 move-limited levels. Reach Stage 50 and you get a choice: claim your Victory certificate on the spot, or keep climbing all the way to Stage 100 for an exclusive Legacy Certificate.
+  - **Live Performance** — a 90-second time attack with a late-game difficulty ramp. Finishing the clock is always a win now — there's no fail state here, only how good your final score is.
+  - **Leisure** — no timer, no game over, just relax.
 - **A Fever system** shared across all modes: chain matches to level up Fever, hit milestones for bonus rounds and rewards.
-- **Six unique specials** — from Classic Miku's Fever-boosting Harmony Wave to Space Singer's Cosmic Gravity, which lets you freely rearrange the board for a short window.
+- **Six unique specials** — from Classic Miku's Fever-boosting Harmony Wave, to Sakura's Blossom Blast (marks two tiles for a 3x3 clear each, always spaced apart so neither blast steps on the other), to Space Singer's Cosmic Gravity, which lets you freely rearrange the board for a short window.
+- **Juicy match feedback** — cleared tiles burst into a small shower of theme-colored particles, and board refills drop into place with a bit of weight behind them instead of just popping in.
 - **Downloadable results certificates** — a shareable image generated after every run, with your score and a portrait of the character you played.
 - **English / Japanese language toggle**, switchable anytime from the header, including mid-run.
 

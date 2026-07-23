@@ -8,7 +8,7 @@ Internal reference for maintaining this project. For the player-facing descripti
 |---|---|
 | `index.html` | All markup. No inline `<script>`/`<style>` beyond the Google Fonts `<link>`. Every element JS touches has an `id`; every translatable string carries `data-i18n`. |
 | `miku-style.css` | All styling. Organized in numbered sections (search `====` banners). Character theming flows through 3 CSS custom properties (`--theme-color`, `--theme-color-soft`, `--theme-color-glow`) set once per character in `selectCharacter()`, not hardcoded per-element. |
-| `miku-logic.js` | All game logic, ~3300 lines, organized in numbered `====` sections (search for `1. AUDIO SYNTHESIS`, `2. GLOBAL GAME STATE`, etc. — jump to a section header to orient yourself). |
+| `miku-logic.js` | All game logic, ~3500 lines, organized in numbered `====` sections (search for `1. AUDIO SYNTHESIS`, `2. GLOBAL GAME STATE`, etc. — jump to a section header to orient yourself). |
 | `i18n.js` | English/Japanese dictionary + the `t()`/`applyTranslations()`/`setLanguage()` helpers. Must load before `miku-logic.js`. |
 | `cert-assets.js` | Generated, not hand-edited. Base64 `data:` URIs of every certificate background/portrait, pre-resized. Regenerate from `v-j-rs/` source files if art changes (see that file's header comment for the exact recipe). |
 | `Miku-cards/*.png` | Roster card + in-game sidebar portraits (1920×1440, alpha PNG). |
@@ -21,15 +21,29 @@ No build step, no bundler, no `node_modules` at runtime — this is plain `<scri
 
 1. `generateBoard()` fills an 8×8 grid with no pre-existing matches and at least one legal move.
 2. Player swaps two tiles (`executeSwap`) — adjacent only, unless a character special has temporarily lifted that rule.
-3. `findMatches()` / `processMatchCycles()` resolve cascades: clear → `collapseAndRefill()` → re-check for chained matches → repeat, incrementing `comboChain` each pass.
+3. `findMatches()` / `processMatchCycles()` resolve cascades: clear (each cleared tile spawns a themed particle burst, `spawnMatchParticles()`) → `collapseAndRefill()` (returns a per-cell fall-distance map) → `animateBoardDrop()` eases the refill into place using that map → re-check for chained matches → repeat, incrementing `comboChain` each pass.
 4. Each cleared tile feeds three parallel resources: score, the Fever meter, and (if it's this run's `manaChargeType`) the mana bar.
 5. `hasPossibleMoves()` runs after every settle; a dead board triggers `handleDeadlock()` → `reshuffleBoard()`.
 
 ### The three modes
 
-- **Stage Clear** (`movesLeft`-gated): target score climbs every 10 levels (`stageClearGoalForLevel()`). No clock.
-- **Live Performance** (`timeLeft`-gated): 90s clock, ends the run at 0. Once `timeLeft` drops under `LIVE_PERFORMANCE_HARD_TIME_THRESHOLD` (22.5s = 25% of start), `triggerLivePerformanceHardMode()` fires once: spawns 4 extra obstacle tiles and widens the icon-spawn spread (`weightedRandomType()`'s hard-mode branch) so matches get statistically harder to stumble into — a deliberate "final stretch gets tense" ramp, not a bug.
-- **Leisure**: no moves, no clock, no game-over. Same fever/mana systems, purely for relaxed play.
+- **Stage Clear** (`movesLeft`-gated): target score climbs every 10 levels (`stageClearGoalForLevel()`). Two victory tiers — see below.
+- **Live Performance** (`timeLeft`-gated): 90s clock. Once `timeLeft` drops under `LIVE_PERFORMANCE_HARD_TIME_THRESHOLD` (22.5s = 25% of start), `triggerLivePerformanceHardMode()` fires once: spawns 4 extra obstacle tiles and widens the icon-spawn spread (`weightedRandomType()`'s hard-mode branch) so matches get statistically harder to stumble into — a deliberate "final stretch gets tense" ramp, not a bug. No fail state: reaching 0 — naturally or via a deadlock penalty draining the last few seconds — always ends the run as `'victory'`; only a manual End Session mid-clock stays `'normal'`. See `startPerformanceTimer()` / `handleDeadlock()`.
+- **Leisure**: no moves, no clock, no game-over, no victory tiers. Same fever/mana systems, purely for relaxed play.
+
+### Stage Clear's two-tier victory
+
+`STAGE_CLEAR_VICTORY_LEVEL` (50) and `STAGE_CLEAR_FINAL_LEVEL` (100) split Stage Clear into two endings instead of one:
+
+- Hitting level 50 for the first time this run (`checkLevelProgress()`, guarded by `hasEarnedVictory` so it only fires once) opens a choice overlay (`showStageVictoryChoice()`) instead of continuing play immediately — **Claim Certificate** ends the run now as `'victory'`; **Keep Climbing** just hides the overlay and resumes with score/level/movesLeft untouched. It blocks board input the same way every other overlay does: `processMatchCycles()` leaves `isProcessing` `true` before opening it, `confirmStageVictoryChoice()` clears it again.
+- `hasEarnedVictory` is a run-scoped ratchet: once true, *every* later ending of that run — moves exhausted, a deadlock penalty, or a manual End Session — resolves to `'victory'` instead of `'normal'`, since the achievement isn't retroactively lost by a later loss condition.
+- Reaching level 100 always resolves to `'legacyVictory'` regardless of `hasEarnedVictory`, bypassing the choice overlay entirely (nothing left to choose between).
+
+`gameOverScreen(outcome)` takes `'normal' | 'victory' | 'legacyVictory'` (not a boolean) and threads it through `prepareCertificate()` → `buildCertificateCanvas()` → `finishCertificate()`, which picks the results-overlay copy and certificate suffix off that same string — see the Certificate pipeline section below.
+
+### Gotcha: CSS animations beat inline transforms
+
+An element with a running CSS `animation` that touches `transform` will keep overriding an inline `style.transform` set from JS on that element, every frame — the animation always wins the cascade while it's active, regardless of how recently the inline style was set. This has bitten tile transforms twice: Space Singer's free-move floating tiles (`freeMoveFloat` — fixed by dropping `transform` from `#match3Grid.free-move-active .grid-cell-item`'s own *transition* list, so the animation owns it exclusively) and the Live Performance icon-challenge glow (`challengeIconGlow` — fixed by dropping `transform: scale(...)` from the keyframes entirely, since that pulse didn't need to touch transform at all). If a future tile-state animation needs to coexist with `executeSwap()`/`animateBoardDrop()`, keep its keyframes off `transform` — drive the pulse through `box-shadow`/`filter`/`opacity` instead.
 
 ### Fever system
 
@@ -44,7 +58,7 @@ One per character, unlocked at `manaEnergy === 100`, dispatched from `activateSp
 | Character | Special | Mechanic |
 |---|---|---|
 | Classic | Harmony Wave | 25s ×2 Fever-gain buff, no board mutation |
-| Sakura | Blossom Blast | Marks 2 tiles; click either later to clear a 3×3 |
+| Sakura | Blossom Blast | Marks 2 tiles, kept a Chebyshev distance of ≥3 apart so their 3×3 clear zones never touch; click either later to detonate it |
 | 25-ji | Void World | Clears every tile of the board's most common icon, random tie-break |
 | Snow | Glacial Freeze | Instant resource refill, varies by mode |
 | Racing | Turbo Blitz | Aim mode; clears a full row + column |
@@ -52,7 +66,9 @@ One per character, unlocked at `manaEnergy === 100`, dispatched from `activateSp
 
 ## Certificate pipeline
 
-`buildCertificateCanvas()` draws a 1200×630 canvas: cover-fit background → contain-fit portrait (never cropped, just shrunk) → 4 corner emoji (drawn *after* the portrait so they're never hidden behind hair/clothing) → a `drawCertTextPlaque()` backing card sized to the actual text content → per-character-themed text (`CERT_TYPOGRAPHY`). Both images load from `cert-assets.js`'s pre-embedded `data:` URIs specifically to dodge `file://` canvas-tainting — see that file's header comment before "fixing" the image loading to use `fetch()` again, that's the bug this works around.
+`buildCertificateCanvas()` draws a 1200×630 canvas: cover-fit background → contain-fit portrait (never cropped, just shrunk) → 4 corner emoji (drawn *after* the portrait so they're never hidden behind hair/clothing) → a `drawCertTextPlaque()` backing card sized to the actual text content → per-character-themed text (`CERT_TYPOGRAPHY`). Both images load from `cert-assets.js`'s pre-embedded `data:` URIs specifically to dodge `file://` canvas-tainting — see that file's header comment before "fixing" the image loading to use `fetch()` again, that's the bug this works around. The border stroke reads `config.certBorderColor || config.baseColor` — only Sakura sets `certBorderColor` (a darker rose), since her pale pink `baseColor` blended into the certificate's own pink background otherwise; every other character just falls through to their normal theme color.
+
+The mode-label line (`"{modeLabel} — {suffix}"`) picks its suffix off the same `outcome` string `gameOverScreen()` threads through: none for `'normal'`, `certificate.victorySuffix` for `'victory'`, `certificate.legacyVictorySuffix` for `'legacyVictory'` (both in `i18n.js`). That line's font size isn't fixed — `finishCertificate()` measures it at 28px and, only if it would overflow past the canvas edge (a wide portrait pushes the text column further right, leaving less room, and the legacy suffix is the longest string that line ever renders), shrinks it proportionally down to a 16px floor before drawing. Found the hard way: Space Singer's wide portrait plus the legacy suffix clipped off-canvas before this guard existed.
 
 Text on the certificate reads from `t()` same as everything else, so it renders in whichever language is active — note the per-character display fonts (Orbitron/Audiowide/Rajdhani/Fredoka/Quicksand/Share Tech Mono) only cover Latin glyphs, so Japanese certificate text falls back to the browser's generic sans-serif for the CJK characters specifically. Still fully legible, just not the stylized face.
 

@@ -55,7 +55,7 @@
                         <div class="icon-wrapper classic-icon">
                             <span aria-hidden="true">🌐</span>
                         </div>
-                        <h3 class="card-title" data-i18n="character.classic.name">Classic Miku</h3>
+                        <h2 class="card-title" data-i18n="character.classic.name">Classic Miku</h2>
                         <p class="card-subtitle" data-i18n="character.classic.title">Virtual Diva #01</p>
                         <p class="card-body-text" data-i18n="character.classic.desc">
                             Futuristic vibes with cyan aesthetics. Match negi leeks, microphones, curious cats, and wifi signals &mdash; plus the lucky number 39.
@@ -72,7 +72,7 @@
                         <div class="icon-wrapper sakura-icon">
                             <span aria-hidden="true">🌸</span>
                         </div>
-                        <h3 class="card-title" data-i18n="character.sakura.name">Sakura Miku</h3>
+                        <h2 class="card-title" data-i18n="character.sakura.name">Sakura Miku</h2>
                         <p class="card-subtitle" data-i18n="character.sakura.title">Springtime Blossom</p>
                         <p class="card-body-text" data-i18n="character.sakura.desc">
                             Sweet pastel-pink board dressed in cherry blossoms. Match sakura blooms, sweet mochi, fresh cherries, and cozy temperature charms.
@@ -89,7 +89,7 @@
                         <div class="icon-wrapper nightcord-icon">
                             <span aria-hidden="true">🌌</span>
                         </div>
-                        <h3 class="card-title" data-i18n="character.nightcord.name">25-ji Miku</h3>
+                        <h2 class="card-title" data-i18n="character.nightcord.name">25-ji Miku</h2>
                         <p class="card-subtitle" data-i18n="character.nightcord.title">Void World</p>
                         <p class="card-body-text" data-i18n="character.nightcord.desc">
                             A void theme born from silent echoes. Match delicate ribbons, hourglasses, memory photos, and glitching gear icons.
@@ -106,7 +106,7 @@
                         <div class="icon-wrapper snow-icon">
                             <span aria-hidden="true">⛄</span>
                         </div>
-                        <h3 class="card-title" data-i18n="character.snow.name">Snow Miku</h3>
+                        <h2 class="card-title" data-i18n="character.snow.name">Snow Miku</h2>
                         <p class="card-subtitle" data-i18n="character.snow.title">Winter Wonderland</p>
                         <p class="card-body-text" data-i18n="character.snow.desc">
                             A frosty, shimmering aesthetic of blue and silver ice. Match sparkling snowflakes, cozy mittens, winter rabbits, and crimson winter charms.
@@ -123,7 +123,7 @@
                         <div class="icon-wrapper racing-icon">
                             <span aria-hidden="true">🏆</span>
                         </div>
-                        <h3 class="card-title" data-i18n="character.racing.name">Racing Miku</h3>
+                        <h2 class="card-title" data-i18n="character.racing.name">Racing Miku</h2>
                         <p class="card-subtitle" data-i18n="character.racing.title">Mechanic Enthusiast</p>
                         <p class="card-body-text" data-i18n="character.racing.desc">
                             High-octane neon orange and emerald green. Match checkered flags, speedy cars, racing wheels, and first-place trophies!
@@ -140,7 +140,7 @@
                         <div class="icon-wrapper space-icon">
                             <span aria-hidden="true">☄️</span>
                         </div>
-                        <h3 class="card-title" data-i18n="character.space.name">Space Singer</h3>
+                        <h2 class="card-title" data-i18n="character.space.name">Space Singer</h2>
                         <p class="card-subtitle" data-i18n="character.space.title">Galactic Odyssey</p>
                         <p class="card-body-text" data-i18n="character.space.desc">
                             Deep galaxy purples and sparkling solar flares. Match astrophysics charts, falling stars, planet, and mysterious cosmic numerals.
@@ -172,7 +172,7 @@
                         <div class="icon-wrapper mode-icon">
                             <span aria-hidden="true">💠</span>
                         </div>
-                        <h3 class="card-title" data-i18n="mode.stageClear.name">Stage Clear Mode</h3>
+                        <h2 class="card-title" data-i18n="mode.stageClear.name">Stage Clear Mode</h2>
                         <p class="card-subtitle" data-i18n="mode.stageClear.subtitle">The Progression Mode</p>
                         <p class="card-body-text" data-i18n="mode.stageClear.desc">
                             Reach the target score and clear themed obstacle tiles before you run out of moves. Chain matches during Fever Mode to earn bonus moves.
@@ -188,7 +188,7 @@
                         <div class="icon-wrapper mode-icon">
                             <span aria-hidden="true">⚡</span>
                         </div>
-                        <h3 class="card-title" data-i18n="mode.livePerformance.name">Live Performance Mode</h3>
+                        <h2 class="card-title" data-i18n="mode.livePerformance.name">Live Performance Mode</h2>
                         <p class="card-subtitle" data-i18n="mode.livePerformance.subtitle">High-Energy Time Attack</p>
                         <p class="card-body-text" data-i18n="mode.livePerformance.desc">
                             Race a shrinking 90-second timer. Matches add time back; a 5x combo triggers Fever Mode for double points and faster-falling tiles.
@@ -204,7 +204,7 @@
                         <div class="icon-wrapper mode-icon">
                             <span aria-hidden="true">🛋️</span>
                         </div>
-                        <h3 class="card-title" data-i18n="mode.leisure.name">Leisure Mode</h3>
+                        <h2 class="card-title" data-i18n="mode.leisure.name">Leisure Mode</h2>
                         <p class="card-subtitle" data-i18n="mode.leisure.subtitle">Casual &amp; Endless</p>
                         <p class="card-body-text" data-i18n="mode.leisure.desc">
                             No move limits, no timers, no game-overs. A relaxed sandbox to match at your own pace and watch the cascades.
@@ -381,6 +381,24 @@
                         </div>
                     </div>
 
+                    <!-- Stage Clear only: shown once when `level` first reaches
+                         STAGE_CLEAR_VICTORY_LEVEL (see checkLevelProgress() in
+                         miku-logic.js). Reuses .results-overlay's styling as-is
+                         — same visual treatment, no new CSS needed. Blocks board
+                         input the same way Results does: isProcessing stays true
+                         for as long as this is open (see checkLevelProgress()'s
+                         comment for why that alone is enough). -->
+                    <div id="stageVictoryChoiceOverlay" class="results-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="stageVictoryChoiceHeading">
+                        <div class="overlay-modal-block">
+                            <h2 id="stageVictoryChoiceHeading" class="cyber-font heading-modal" data-i18n="stageVictoryChoice.heading">Stage 50 Clear — Victory!</h2>
+                            <p id="stageVictoryChoiceBody" class="overlay-description" data-i18n="stageVictoryChoice.body">You can claim your certificate now, or keep climbing toward Stage 100 for a Legacy Certificate.</p>
+                            <div class="overlay-button-group flex-center gap-3">
+                                <button id="claimCertificateBtn" type="button" class="btn-action bg-grad-miku text-slate-950" data-i18n="stageVictoryChoice.claim">Claim Certificate</button>
+                                <button id="keepClimbingBtn" type="button" class="btn-utility font-semibold" data-i18n="stageVictoryChoice.keepClimbing">Keep Climbing</button>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- OVERLAY MODAL: WIN / LOSS STAGES -->
                     <div id="resultsOverlay" class="results-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="resultsHeading">
                         <div class="overlay-modal-block">
@@ -427,9 +445,14 @@
                 </div>
                 </div>
 
-                <div class="board-footer-tips flex-between text-xs">
-                    <span data-i18n="hud.footerTip1">Fever milestones &amp; timed challenges grant bonus moves/time!</span>
-                    <span data-i18n="hud.footerTip2">No moves? We'll auto-reshuffle!</span>
+                <!-- Leisure mode swaps this row to a single centered message
+                     instead of the two gameplay tips, which don't really
+                     apply to a no-stakes mode — see applyModeVisibility()
+                     in miku-logic.js. -->
+                <div id="boardFooterTips" class="board-footer-tips flex-between text-xs">
+                    <span id="footerTip1" data-i18n="hud.footerTip1">Fever milestones &amp; timed challenges grant bonus moves/time!</span>
+                    <span id="footerTip2" data-i18n="hud.footerTip2">No moves? We'll auto-reshuffle!</span>
+                    <span id="footerTipLeisure" class="hidden" data-i18n="hud.footerTipLeisure">Just relax and enjoy the cascades ✨</span>
                 </div>
             </div>
 

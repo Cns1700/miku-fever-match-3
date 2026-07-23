@@ -439,9 +439,9 @@ body::before {
 }
 
 .card-body-text {
-    color: #94a3b8;
-    font-size: 0.75rem;
-    line-height: 1.125rem;
+    color: #cbd5e1;
+    font-size: 0.8125rem;
+    line-height: 1.25rem;
     margin-top: 0.625rem;
 }
 
@@ -949,8 +949,8 @@ body::before {
 }
 
 .instruction-tip {
-    font-size: 0.6875rem;
-    color: #94a3b8;
+    font-size: 0.75rem;
+    color: #cbd5e1;
     text-align: center;
     margin-top: 1rem;
     font-style: italic;
@@ -1158,14 +1158,21 @@ body::before {
 
 /* Live Performance's icon-match Fever bonus round: every tile of the
    objective icon glows amber on the board so it's obvious at a glance which
-   icon to chase, in addition to the (also glowing) banner text above. */
+   icon to chase, in addition to the (also glowing) banner text above.
+   The keyframes used to also pulse `transform: scale(...)` — same conflict
+   documented below for free-move-active's floating tiles: a running CSS
+   animation always wins the cascade over an inline style on the same
+   property, so executeSwap()'s inline translate() for a challenge tile
+   kept getting overridden by this scale() every ~450ms instead of easing
+   smoothly, making that tile look glued in place ("static") while its swap
+   partner slid normally. Box-shadow-only avoids the conflict entirely. */
 .grid-cell-item.challenge-icon-tile {
     animation: challengeIconGlow 0.9s infinite ease-in-out;
 }
 
 @keyframes challengeIconGlow {
-    0%, 100% { box-shadow: 0 0 8px #fbbf24; transform: scale(1); }
-    50% { box-shadow: 0 0 20px #fbbf24, 0 0 10px #fbbf24; transform: scale(1.05); }
+    0%, 100% { box-shadow: 0 0 8px #fbbf24; }
+    50% { box-shadow: 0 0 20px #fbbf24, 0 0 10px #fbbf24; }
 }
 
 /* Sakura's Blossom Blast: hot-pink flashing detonator tiles (spec calls for
@@ -1243,10 +1250,36 @@ body::before {
 
 /* Match-clear animation. JS previously toggled three Tailwind utility
    classes (scale-0, rotate-12, opacity-0) that didn't exist in this
-   stylesheet, so matched cells just vanished instantly with no animation. */
+   stylesheet, so matched cells just vanished instantly with no animation.
+   Given its own (longer) transition here rather than relying on
+   .grid-cell-item's shared 0.22s/0.15s — that shared timing is tuned for
+   the swap animation and stays untouched, since .cell-clearing is only ever
+   added to cells that are actually clearing. Paired with
+   spawnMatchParticles()'s themed burst (see .match-particle below) so a
+   match reads as a small burst instead of an instant cut. */
 .cell-clearing {
-    transform: scale(0) rotate(12deg);
+    transition: transform 0.34s ease-in, opacity 0.3s ease-in;
+    transform: scale(0) rotate(18deg);
     opacity: 0;
+}
+
+/* Small themed particles flown out from a matched cell — see
+   spawnMatchParticles(). Positioned per-cell via inline left/top (JS), then
+   animated outward via --particle-x/--particle-y, same technique as
+   .bonus-popup-spark just per-tile instead of per-toast. */
+.match-particle {
+    position: absolute;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    z-index: 43;
+    pointer-events: none;
+    animation: matchParticleBurst 0.5s ease-out forwards;
+}
+
+@keyframes matchParticleBurst {
+    0% { transform: translate(-50%, -50%) translate(0, 0) scale(1); opacity: 1; }
+    100% { transform: translate(-50%, -50%) translate(var(--particle-x), var(--particle-y)) scale(0.25); opacity: 0; }
 }
 
 .board-footer-tips {
@@ -1256,6 +1289,12 @@ body::before {
     color: #ffffff;
     padding: 0 0.5rem;
     font-weight: bold;
+}
+
+/* Leisure mode: single centered message instead of the two gameplay tips —
+   see applyModeVisibility() in miku-logic.js. */
+.board-footer-tips.leisure-centered {
+    justify-content: center;
 }
 
 /* Countdown badge for the two timed character-buff specials (Miku's Harmony
@@ -1341,8 +1380,9 @@ body::before {
 }
 
 .how-to-play-overlay .overlay-description {
-    font-size: 0.875rem;
-    line-height: 1.4rem;
+    font-size: 0.9375rem;
+    line-height: 1.5rem;
+    color: #cbd5e1;
 }
 
 /* Key-point bullets (see showHowToPlay() in miku-logic.js) — left-aligned

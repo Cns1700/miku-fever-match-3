@@ -261,11 +261,15 @@ function toggleMute() {
  * function can read/write any of these directly.
  */
 const GRID_SIZE = 8;
-// Stage Clear now has a defined ending instead of climbing forever — see
-// checkLevelProgress(), which triggers a genuine victory (gameOverScreen(true))
-// the moment `level` reaches this. The score needed per level rises every
-// 10 levels too — see stageClearGoalForLevel() — so the campaign gets
-// gradually tougher on the way to 100 instead of a flat grind.
+// Stage Clear has two victory tiers now instead of one flat ending — see
+// checkLevelProgress(). Reaching STAGE_CLEAR_VICTORY_LEVEL opens a choice
+// overlay (claim a normal Victory certificate now, or keep going); reaching
+// STAGE_CLEAR_FINAL_LEVEL is the full climb, a separate "Legacy" victory
+// tier with its own certificate/results copy (gameOverScreen('legacyVictory')).
+// The score needed per level rises every 10 levels too — see
+// stageClearGoalForLevel() — so the campaign gets gradually tougher on the
+// way to 100 instead of a flat grind.
+const STAGE_CLEAR_VICTORY_LEVEL = 50;
 const STAGE_CLEAR_FINAL_LEVEL = 100;
 // Live Performance's late-game difficulty ramp kicks in once timeLeft drops
 // below this (25% of the 90s starting clock) — see triggerLivePerformanceHardMode().
@@ -324,6 +328,12 @@ let specialTimerIntervalId = null; // drives the on-board countdown badge (#spec
 // Rising-edge tracker so the "special move is ready" SFX (see CHARACTER_SFX)
 // fires once when the mana bar first reaches 100, not on every HUD refresh.
 let specialWasReady = false;
+// Stage Clear only: true once the player has passed STAGE_CLEAR_VICTORY_LEVEL
+// this run (set the moment the choice overlay appears, whether they claim
+// immediately or keep climbing) — see checkLevelProgress(). Once true, any
+// later ending of the run (moves exhausted, deadlock, or the End button)
+// counts as 'victory' instead of 'normal', since they already earned it.
+let hasEarnedVictory = false;
 // True only while the How-To-Play modal is the automatic one shown at the
 // start of a run — see confirmHowToPlay(), which uses it to decide whether
 // the Live Performance clock still needs to be started on dismissal.
@@ -415,6 +425,13 @@ const CHARACTER_THEMES = {
         title: "Cherry Blossom Angel",
         baseColor: "#FFB7C5",
         accentColor: "#FFF0F5",
+        // Certificate border only — baseColor's pale pink blended into the
+        // pink cherry-blossom cert background, so this uses the same dark
+        // rose already established for her cert TEXT (CERT_TYPOGRAPHY.sakura
+        // .accent) instead. Every other character's cert border still just
+        // uses baseColor (see the `config.certBorderColor || config.baseColor`
+        // fallback in buildCertificateCanvas()/drawCertificateFallbackBase()).
+        certBorderColor: "#9c1c48",
         obstacleName: "Wilted Petal",
         hudEmoji: "🌸",
         certEmoji: ["🌸", "🌸"],
@@ -751,6 +768,10 @@ function setupEventListeners() {
     document.getElementById('howToPlayBtn').addEventListener('click', () => showHowToPlay(false));
     document.getElementById('howToPlayCloseBtn').addEventListener('click', confirmHowToPlay);
 
+    // Stage 50 choice overlay (see checkLevelProgress()/showStageVictoryChoice())
+    document.getElementById('claimCertificateBtn').addEventListener('click', () => confirmStageVictoryChoice(true));
+    document.getElementById('keepClimbingBtn').addEventListener('click', () => confirmStageVictoryChoice(false));
+
     // Overlays Actions
     document.getElementById('playAgainBtn').addEventListener('click', () => {
         resetGame();
@@ -849,6 +870,7 @@ function backToMenu() {
 
     document.getElementById('boardBorder').classList.remove('fever-active-border');
     document.getElementById('resultsOverlay').classList.add('hidden');
+    document.getElementById('stageVictoryChoiceOverlay').classList.add('hidden');
     document.getElementById('pauseOverlay').classList.add('hidden');
     hideHowToPlay();
 
@@ -874,6 +896,7 @@ function backToModeSelect() {
 
     document.getElementById('boardBorder').classList.remove('fever-active-border');
     document.getElementById('resultsOverlay').classList.add('hidden');
+    document.getElementById('stageVictoryChoiceOverlay').classList.add('hidden');
     document.getElementById('pauseOverlay').classList.add('hidden');
     hideHowToPlay();
 
@@ -898,10 +921,19 @@ function stopAllTimers() {
     stopSpecialTimerBadge();
 }
 
-/** Ends the current run immediately and shows the results screen early. */
+/**
+ * Ends the current run immediately and shows the results screen early ("End"
+ * button, any mode). Stage Clear respects hasEarnedVictory — quitting early
+ * after already passing STAGE_CLEAR_VICTORY_LEVEL still counts as 'victory',
+ * since that was already earned and quitting shouldn't take it away. Live
+ * Performance stays 'normal' here regardless — only the clock actually
+ * reaching 0 (naturally or via a deadlock penalty) counts as finishing a
+ * performance; quitting early is still just quitting early. Leisure is
+ * always 'normal' (no victory tier there at all).
+ */
 function endSessionNow() {
     if (isProcessing) return;
-    gameOverScreen();
+    gameOverScreen(currentMode === 'stageClear' && hasEarnedVictory ? 'victory' : 'normal');
 }
 
 /** Pause only makes sense in Live Performance (the only mode with a clock). */
@@ -991,8 +1023,17 @@ function confirmHowToPlay() {
 function applyModeVisibility() {
     const isStage = currentMode === 'stageClear';
     const isPerformance = currentMode === 'livePerformance';
+    const isLeisure = currentMode === 'leisure';
     document.querySelectorAll('.hud-stage-only').forEach(el => el.classList.toggle('hidden', !isStage));
     document.querySelectorAll('.hud-performance-only').forEach(el => el.classList.toggle('hidden', !isPerformance));
+
+    // Leisure swaps the two gameplay tips below the board for a single
+    // centered "just relax" message — those tips don't really apply to a
+    // no-stakes mode. See the matching CSS/HTML for board-footer-tips.
+    document.getElementById('boardFooterTips').classList.toggle('leisure-centered', isLeisure);
+    document.getElementById('footerTip1').classList.toggle('hidden', isLeisure);
+    document.getElementById('footerTip2').classList.toggle('hidden', isLeisure);
+    document.getElementById('footerTipLeisure').classList.toggle('hidden', !isLeisure);
 }
 
 /**
@@ -1092,6 +1133,7 @@ function resetGame() {
     challengeIconType = null;
     challengeIconProgress = 0;
     specialWasReady = false;
+    hasEarnedVictory = false;
 
     stopAllTimers();
 
@@ -1487,7 +1529,9 @@ function startPerformanceTimer() {
             document.getElementById('timeDisplay').innerText = 0;
             stopPerformanceTimer();
 
-            const finishRun = () => gameOverScreen();
+            // Live Performance has no fail state now — the clock reaching 0
+            // naturally always means a completed performance, a win.
+            const finishRun = () => gameOverScreen('victory');
             if (!isProcessing) {
                 finishRun();
             } else {
@@ -2003,8 +2047,18 @@ function findMatches() {
     return flattenGroups(findMatchGroups());
 }
 
-/** Shared column-collapse + weighted-refill physics, reused by cascades and every special ability. */
+/**
+ * Shared column-collapse + weighted-refill physics, reused by cascades and
+ * every special ability. Returns a `{"row-col": rowsFallen}` map so the
+ * caller can play the actual falling motion afterward (see
+ * animateBoardDrop()) — surviving tiles fall however many rows they
+ * shifted down; brand new tiles are treated as dropping in from just above
+ * the board (row -1), so a new tile landing near the top falls a shorter
+ * distance than one landing near the bottom of the same column.
+ */
 function collapseAndRefill() {
+    const fallDistances = {};
+
     for (let c = 0; c < GRID_SIZE; c++) {
         let emptySpaceIndex = GRID_SIZE - 1;
         for (let r = GRID_SIZE - 1; r >= 0; r--) {
@@ -2012,23 +2066,60 @@ function collapseAndRefill() {
                 if (emptySpaceIndex !== r) {
                     boardState[emptySpaceIndex][c] = boardState[r][c];
                     boardState[r][c] = null;
+                    fallDistances[`${emptySpaceIndex}-${c}`] = emptySpaceIndex - r;
                 }
                 emptySpaceIndex--;
             }
         }
-    }
-
-    for (let r = 0; r < GRID_SIZE; r++) {
-        for (let c = 0; c < GRID_SIZE; c++) {
-            if (boardState[r][c] === null) {
-                boardState[r][c] = {
-                    type: weightedRandomType(),
-                    id: Math.random().toString(36).substring(2, 9),
-                    clearing: false
-                };
-            }
+        for (let r = emptySpaceIndex; r >= 0; r--) {
+            boardState[r][c] = {
+                type: weightedRandomType(),
+                id: Math.random().toString(36).substring(2, 9),
+                clearing: false
+            };
+            fallDistances[`${r}-${c}`] = r + 1;
         }
     }
+
+    return fallDistances;
+}
+
+/**
+ * Plays the falling motion for collapseAndRefill()'s result — call right
+ * after the renderBoard() that follows it. Each affected cell is pre-offset
+ * upward by its fall distance (translateY in cell-heights via %, so it
+ * doesn't matter these are freshly-created DOM nodes with no prior position
+ * to animate from) with transitions disabled, then on the next frame gets
+ * its transition re-enabled and the offset cleared — same "set the end
+ * state, let CSS ease you there" approach executeSwap() uses, just
+ * vertical-only and starting from a synthetic offset instead of a real one.
+ * The double rAF is the standard way to guarantee the browser has actually
+ * painted the "no transition" offset before we flip to the animated state;
+ * one rAF alone isn't reliably ordered before paint in every browser.
+ */
+function animateBoardDrop(fallDistances) {
+    const entries = Object.entries(fallDistances);
+    if (entries.length === 0) return;
+
+    const cells = [];
+    for (const [key, distance] of entries) {
+        const cell = document.getElementById(`cell-${key}`);
+        if (!cell) continue;
+        cell.style.transition = 'none';
+        cell.style.transform = `translateY(${-distance * 100}%)`;
+        cells.push({ cell, distance });
+    }
+
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            cells.forEach(({ cell, distance }) => {
+                const duration = cascadeDelay(Math.min(480, 200 + distance * 55));
+                cell.style.transition = `transform ${duration}ms cubic-bezier(0.16, 1, 0.3, 1)`;
+                cell.style.transform = '';
+                setTimeout(() => { cell.style.transition = ''; }, duration + 30);
+            });
+        });
+    });
 }
 
 /**
@@ -2139,6 +2230,7 @@ async function processMatchCycles() {
             if (cell) {
                 cell.classList.add('cell-clearing');
             }
+            spawnMatchParticles(m.row, m.col, config.baseColor);
             if (boardState[m.row][m.col] && boardState[m.row][m.col].obstacle) {
                 obstacleTilesRemaining = Math.max(0, obstacleTilesRemaining - 1);
                 obstacleCleared = true;
@@ -2159,12 +2251,17 @@ async function processMatchCycles() {
             }
         }
 
-        await new Promise(resolve => setTimeout(resolve, cascadeDelay(250)));
+        // Long enough for .cell-clearing's shrink/fade and the particle
+        // burst to actually read before the next step tears the DOM down —
+        // bumped from 250/200 alongside slowing those animations down, so
+        // clears don't just look like an instant cut anymore.
+        await new Promise(resolve => setTimeout(resolve, cascadeDelay(400)));
 
-        collapseAndRefill();
+        const fallDistances = collapseAndRefill();
 
         renderBoard();
-        await new Promise(resolve => setTimeout(resolve, cascadeDelay(200)));
+        animateBoardDrop(fallDistances);
+        await new Promise(resolve => setTimeout(resolve, cascadeDelay(350)));
 
         comboChain++;
         groups = findMatchGroups();
@@ -2174,7 +2271,7 @@ async function processMatchCycles() {
     if (checkLevelProgress()) return;
 
     if (currentMode === 'stageClear' && movesLeft <= 0) {
-        gameOverScreen();
+        gameOverScreen(hasEarnedVictory ? 'victory' : 'normal');
         return;
     }
 
@@ -2210,12 +2307,14 @@ async function handleDeadlock() {
     if (currentMode === 'stageClear' && !feverBonusRoundActive) {
         movesLeft -= 1;
         document.getElementById('movesDisplay').innerText = movesLeft;
-        if (movesLeft <= 0) { gameOverScreen(); return; }
+        if (movesLeft <= 0) { gameOverScreen(hasEarnedVictory ? 'victory' : 'normal'); return; }
         showBonusPopup(t('popup.deadlockMove'), CHARACTER_THEMES[currentCharacter].baseColor);
     } else if (currentMode === 'livePerformance' && !feverBonusRoundActive) {
         timeLeft = Math.max(0, timeLeft - 5);
         document.getElementById('timeDisplay').innerText = Math.ceil(timeLeft);
-        if (timeLeft <= 0) { gameOverScreen(); return; }
+        // Live Performance has no fail state now — the penalty draining the
+        // clock to 0 still counts as a completed (if unlucky) performance.
+        if (timeLeft <= 0) { gameOverScreen('victory'); return; }
         showBonusPopup(t('popup.deadlockSeconds'), CHARACTER_THEMES[currentCharacter].baseColor);
     }
 
@@ -2392,10 +2491,18 @@ function stageClearGoalForLevel(targetLevel) {
 
 /**
  * Stage Clear only: advances `level` once `score` clears its goal. Returns
- * true the moment `level` reaches STAGE_CLEAR_FINAL_LEVEL — that's a
- * genuine victory (gameOverScreen(true)), not just another level-up, so the
- * caller (processMatchCycles()) knows to stop there instead of continuing
- * on to its usual moves-exhausted/deadlock checks.
+ * true whenever play should stop right here instead of processMatchCycles()
+ * continuing on to its usual moves-exhausted/deadlock checks — that's true
+ * for both of Stage Clear's two victory tiers:
+ *   - level reaches STAGE_CLEAR_FINAL_LEVEL (100): the full climb, an
+ *     immediate 'legacyVictory' ending, same as before.
+ *   - level first reaches STAGE_CLEAR_VICTORY_LEVEL (50): NEW — instead of
+ *     ending the run outright, this opens a choice overlay
+ *     (showStageVictoryChoice()) and leaves isProcessing true for as long as
+ *     it's showing, which is what actually blocks the board — see that
+ *     function's comment. hasEarnedVictory guards this so it only fires
+ *     once per run; every level-up after 50 (whether they claimed or kept
+ *     climbing) falls through to the plain level-up branch below like normal.
  */
 function checkLevelProgress() {
     if (currentMode !== 'stageClear') return false;
@@ -2406,7 +2513,14 @@ function checkLevelProgress() {
         document.getElementById('levelDisplay').innerText = level;
         if (level >= STAGE_CLEAR_FINAL_LEVEL) {
             document.getElementById('goalDisplay').innerText = 'MAX';
-            gameOverScreen(true);
+            gameOverScreen('legacyVictory');
+            return true;
+        }
+        if (level >= STAGE_CLEAR_VICTORY_LEVEL && !hasEarnedVictory) {
+            hasEarnedVictory = true;
+            document.getElementById('goalDisplay').innerText = stageClearGoalForLevel(level);
+            AudioSynth.playTone(523, 'sine', 0.5, 1046);
+            showStageVictoryChoice();
             return true;
         }
         document.getElementById('goalDisplay').innerText = stageClearGoalForLevel(level);
@@ -2415,22 +2529,59 @@ function checkLevelProgress() {
     return false;
 }
 
-/** Ends the current run: stops all timers, shows the results overlay with mode-specific text, and starts building the certificate. */
+/**
+ * Opens the Stage 50 choice overlay (see index.html's #stageVictoryChoiceOverlay).
+ * Doesn't touch isProcessing itself — it's already true here (this runs
+ * from inside processMatchCycles(), which only clears it at the very end,
+ * the same line checkLevelProgress()'s `return true` short-circuits past).
+ * Leaving it true is what blocks swaps/the Special button for as long as
+ * this is open; confirmStageVictoryChoice() below is what clears it again.
+ */
+function showStageVictoryChoice() {
+    document.getElementById('stageVictoryChoiceOverlay').classList.remove('hidden');
+}
+
+/**
+ * Handles both choice-overlay buttons. `claim` picks between the two exits:
+ * either end the run right now as a 'victory' (certificate + results screen,
+ * same as any other ending), or hide the overlay and hand control straight
+ * back to the board — score/movesLeft/level are untouched either way, this
+ * function never modifies them.
+ */
+function confirmStageVictoryChoice(claim) {
+    document.getElementById('stageVictoryChoiceOverlay').classList.add('hidden');
+    if (claim) {
+        gameOverScreen('victory');
+    } else {
+        isProcessing = false;
+    }
+}
+
 /**
  * Ends the current run: stops all timers, shows the results overlay with
- * mode-specific text, and starts building the certificate. `isVictory` is
- * only ever true for the one path that genuinely earns it — Stage Clear
- * reaching STAGE_CLEAR_FINAL_LEVEL (see checkLevelProgress()) — every other
- * call site (moves exhausted, time's up, the deadlock penalty ending the
- * run, End Session) calls this with no args and gets the normal ending.
+ * mode-specific text, and starts building the certificate. `outcome` is one
+ * of:
+ *   - 'legacyVictory' — Stage Clear reached STAGE_CLEAR_FINAL_LEVEL (100),
+ *     the full climb. Only ever set by checkLevelProgress().
+ *   - 'victory' — Stage Clear ended (moves exhausted, deadlock, or End
+ *     Session) after already passing STAGE_CLEAR_VICTORY_LEVEL this run
+ *     (hasEarnedVictory), OR the Stage 50 choice overlay's "Claim
+ *     Certificate" button, OR Live Performance's clock reaching 0 —
+ *     naturally via startPerformanceTimer(), or via handleDeadlock()'s
+ *     penalty draining it there. Live Performance has no fail state now:
+ *     finishing a performance (by any means) is always a win.
+ *   - 'normal' (default) — every other ending: Stage Clear without ever
+ *     reaching level 50, Live Performance ended early via End Session
+ *     (before the clock hit 0), and Leisure always (no victory tier there).
  */
-function gameOverScreen(isVictory = false) {
+function gameOverScreen(outcome = 'normal') {
     stopAllTimers();
     isFeverMode = false;
     feverBonusRoundActive = false;
     document.getElementById('boardBorder').classList.remove('fever-active-border');
 
-    if (isVictory) {
+    const isWin = outcome === 'victory' || outcome === 'legacyVictory';
+    if (isWin) {
         updatePortrait('happy');
         AudioSynth.playTone(523, 'sine', 0.3, 784);
         setTimeout(() => AudioSynth.playTone(659, 'sine', 0.3, 1046), 150);
@@ -2443,10 +2594,20 @@ function gameOverScreen(isVictory = false) {
     document.getElementById('resultsOverlay').classList.remove('hidden');
     document.getElementById('resultsScore').innerText = String(score).padStart(6, '0');
 
-    if (isVictory) {
+    if (outcome === 'legacyVictory') {
+        const charName = t(`character.${currentCharacter}.name`);
+        document.getElementById('victoryBadge').innerText = t('results.stageClearLegacyVictory.badge', { charName });
+        document.getElementById('resultsHeading').innerText = t('results.stageClearLegacyVictory.heading');
+        document.getElementById('resultsDetail').innerText = t('results.stageClearLegacyVictory.detail', { finalLevel: STAGE_CLEAR_FINAL_LEVEL, score: String(score).padStart(6, '0'), charName });
+    } else if (outcome === 'victory' && currentMode === 'livePerformance') {
+        document.getElementById('victoryBadge').innerText = t('results.livePerformanceVictory.badge');
+        document.getElementById('resultsHeading').innerText = t('results.livePerformanceVictory.heading');
+        document.getElementById('resultsDetail').innerText = t('results.livePerformanceVictory.detail', { score: String(score).padStart(6, '0'), bestCombo });
+    } else if (outcome === 'victory') {
+        // Stage Clear only — Leisure never reaches 'victory' at all.
         document.getElementById('victoryBadge').innerText = t('results.stageClearVictory.badge');
         document.getElementById('resultsHeading').innerText = t('results.stageClearVictory.heading');
-        document.getElementById('resultsDetail').innerText = t('results.stageClearVictory.detail', { finalLevel: STAGE_CLEAR_FINAL_LEVEL, score: String(score).padStart(6, '0') });
+        document.getElementById('resultsDetail').innerText = t('results.stageClearVictory.detail', { level, score: String(score).padStart(6, '0') });
     } else if (currentMode === 'livePerformance') {
         document.getElementById('victoryBadge').innerText = t('results.livePerformanceOver.badge');
         document.getElementById('resultsHeading').innerText = t('results.livePerformanceOver.heading');
@@ -2461,7 +2622,7 @@ function gameOverScreen(isVictory = false) {
         document.getElementById('resultsDetail').innerText = t('results.stageClearOver.detail', { level });
     }
 
-    prepareCertificate(isVictory);
+    prepareCertificate(outcome);
 }
 
 /**
@@ -2605,6 +2766,10 @@ function specialHarmonyWave() {
  * "detonators" instead of clearing anything immediately. The player can
  * click either one at any later point (see handleCellSelect() /
  * detonateBlossomTile() below) to clear a 3x3 radius around it.
+ *
+ * The two picks are kept a Chebyshev distance of >= 3 apart so their 3x3
+ * blast radii never touch or overlap — each detonator gets its own
+ * dedicated clear area rather than double-dipping the same tiles.
  */
 function specialBlossomBreeze() {
     const candidates = [];
@@ -2619,7 +2784,25 @@ function specialBlossomBreeze() {
         candidates[i] = candidates[j];
         candidates[j] = temp;
     }
-    candidates.slice(0, 2).forEach(([r, c]) => { boardState[r][c].detonator = true; });
+
+    const first = candidates[0];
+    const rest = candidates.slice(1);
+    let second = rest.find(([r, c]) =>
+        Math.max(Math.abs(r - first[0]), Math.abs(c - first[1])) >= 3
+    );
+    // Practically unreachable on an 8x8 board, but if every remaining open
+    // tile happens to be within range (e.g. the board is mostly obstacles),
+    // fall back to whichever one is farthest rather than skipping it.
+    if (!second && rest.length > 0) {
+        second = rest.reduce((farthest, cand) => {
+            const d = Math.max(Math.abs(cand[0] - first[0]), Math.abs(cand[1] - first[1]));
+            const dFarthest = Math.max(Math.abs(farthest[0] - first[0]), Math.abs(farthest[1] - first[1]));
+            return d > dFarthest ? cand : farthest;
+        });
+    }
+
+    const chosen = second ? [first, second] : [first];
+    chosen.forEach(([r, c]) => { boardState[r][c].detonator = true; });
     renderBoard();
     showBonusPopup(t('popup.blossomBlast'), CHARACTER_THEMES.sakura.baseColor);
 }
@@ -2657,8 +2840,9 @@ async function detonateBlossomTile(row, col) {
     score += 150;
     document.getElementById('scoreDisplay').innerText = String(score).padStart(6, '0');
     AudioSynth.playSpecial();
-    collapseAndRefill();
+    const fallDistances = collapseAndRefill();
     renderBoard();
+    animateBoardDrop(fallDistances);
     await new Promise(resolve => setTimeout(resolve, 300));
     comboChain = 1;
     await processMatchCycles();
@@ -2700,8 +2884,9 @@ async function specialVoidWorld() {
     applyDirectClearRewards(voidCells);
     voidCells.forEach(({ row: r, col: c }) => { boardState[r][c] = null; });
 
-    collapseAndRefill();
+    const fallDistances = collapseAndRefill();
     renderBoard();
+    animateBoardDrop(fallDistances);
     await new Promise(resolve => setTimeout(resolve, 300));
     comboChain = 1;
     await processMatchCycles();
@@ -2746,8 +2931,9 @@ async function resolveTurboBlitz(row, col) {
 
     score += 200;
     document.getElementById('scoreDisplay').innerText = String(score).padStart(6, '0');
-    collapseAndRefill();
+    const fallDistances = collapseAndRefill();
     renderBoard();
+    animateBoardDrop(fallDistances);
     await new Promise(resolve => setTimeout(resolve, 300));
     comboChain = 1;
     await processMatchCycles();
@@ -2851,6 +3037,41 @@ function showBonusPopup(text, color) {
         spark.style.setProperty('--spark-y', `${Math.sin(angle) * 60}px`);
         board.appendChild(spark);
         setTimeout(() => spark.remove(), 900);
+    }
+}
+
+/**
+ * Small burst of theme-colored particles flown out from a matched cell's
+ * position — called once per cleared cell from processMatchCycles(). Same
+ * outward-translate technique as showBonusPopup()'s icon sparks above, just
+ * positioned per-cell via getBoundingClientRect() instead of pinned to
+ * board-center, and plain colored dots rather than icon sprites since a big
+ * cascade can call this a dozen+ times in a single pass — cheap DOM nodes
+ * animated on transform/opacity only, nothing to decode or lay out.
+ */
+function spawnMatchParticles(row, col, color) {
+    const board = document.getElementById('boardBorder');
+    const cell = document.getElementById(`cell-${row}-${col}`);
+    if (!board || !cell) return;
+
+    const boardRect = board.getBoundingClientRect();
+    const cellRect = cell.getBoundingClientRect();
+    const originX = cellRect.left - boardRect.left + cellRect.width / 2;
+    const originY = cellRect.top - boardRect.top + cellRect.height / 2;
+
+    const particleCount = 6;
+    for (let i = 0; i < particleCount; i++) {
+        const particle = document.createElement('span');
+        particle.className = 'match-particle';
+        particle.style.left = `${originX}px`;
+        particle.style.top = `${originY}px`;
+        particle.style.background = color;
+        const angle = (Math.PI * 2 * i) / particleCount + (Math.random() * 0.6 - 0.3);
+        const dist = 24 + Math.random() * 16;
+        particle.style.setProperty('--particle-x', `${Math.cos(angle) * dist}px`);
+        particle.style.setProperty('--particle-y', `${Math.sin(angle) * dist}px`);
+        board.appendChild(particle);
+        setTimeout(() => particle.remove(), 520);
     }
 }
 
@@ -3046,7 +3267,7 @@ function drawCertificateFallbackBase(config, canvas, ctx) {
     gradient.addColorStop(1, '#0d1117');
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.strokeStyle = config.baseColor;
+    ctx.strokeStyle = config.certBorderColor || config.baseColor;
     ctx.lineWidth = 8;
     ctx.strokeRect(4, 4, canvas.width - 8, canvas.height - 8);
 }
@@ -3062,7 +3283,7 @@ function drawCertificateFallbackBase(config, canvas, ctx) {
  * full-canvas darkening scrim, so it stays legible over a busy/bright photo
  * without dimming the photo itself.
  */
-function finishCertificate(canvas, ctx, callback, isVictory = false, textX = 480) {
+function finishCertificate(canvas, ctx, callback, outcome = 'normal', textX = 480) {
     const config = CHARACTER_THEMES[currentCharacter];
     const type = CERT_TYPOGRAPHY[currentCharacter] || CERT_TYPOGRAPHY.classic;
 
@@ -3072,7 +3293,10 @@ function finishCertificate(canvas, ctx, callback, isVictory = false, textX = 480
     // back to the browser's generic sans-serif for the CJK characters
     // specifically (still fully legible, just not the stylized face).
     const charName = t(`character.${currentCharacter}.name`);
-    const modeLabelText = t(`certificate.modeLabels.${currentMode}`) + (isVictory ? t('certificate.victorySuffix') : '');
+    const victorySuffix = outcome === 'legacyVictory' ? t('certificate.legacyVictorySuffix')
+        : outcome === 'victory' ? t('certificate.victorySuffix')
+        : '';
+    const modeLabelText = t(`certificate.modeLabels.${currentMode}`) + victorySuffix;
     const scoreText = String(score).padStart(6, '0');
     const footerText = t('certificate.footer');
 
@@ -3083,8 +3307,22 @@ function finishCertificate(canvas, ctx, callback, isVictory = false, textX = 480
     // each line in its own font/size and take the max.
     ctx.font = `${type.weight} 48px ${type.font}`;
     const nameWidth = ctx.measureText(charName).width;
-    ctx.font = `700 28px ${type.font}`;
-    const modeWidth = ctx.measureText(modeLabelText).width;
+
+    // The mode label can run long — "Live Performance Mode — Perfect
+    // Harmony!" is a lot of text — and combined with a wide portrait
+    // pushing textX inward (Space Singer especially), a fixed 28px size
+    // could overflow past the canvas edge entirely. Shrink it to fit
+    // whatever width is actually available instead of letting it run off.
+    const availableWidth = canvas.width - 24 - textX;
+    let modeFontSize = 28;
+    ctx.font = `700 ${modeFontSize}px ${type.font}`;
+    let modeWidth = ctx.measureText(modeLabelText).width;
+    if (modeWidth > availableWidth) {
+        modeFontSize = Math.max(16, Math.floor(modeFontSize * (availableWidth / modeWidth)));
+        ctx.font = `700 ${modeFontSize}px ${type.font}`;
+        modeWidth = ctx.measureText(modeLabelText).width;
+    }
+
     ctx.font = `${type.weight} 92px ${type.font}`;
     const scoreWidth = ctx.measureText(scoreText).width;
     ctx.font = `600 18px ${type.font}`;
@@ -3108,7 +3346,7 @@ function finishCertificate(canvas, ctx, callback, isVictory = false, textX = 480
     ctx.fillText(charName, textX, 195);
 
     ctx.fillStyle = type.accent;
-    ctx.font = `700 28px ${type.font}`;
+    ctx.font = `700 ${modeFontSize}px ${type.font}`;
     ctx.fillText(modeLabelText, textX, 235);
 
     ctx.fillStyle = type.label;
@@ -3143,7 +3381,7 @@ function finishCertificate(canvas, ctx, callback, isVictory = false, textX = 480
  * still fails to decode, this falls back to a text-only gradient certificate
  * rather than getting stuck forever on "Preparing Certificate…".
  */
-async function buildCertificateCanvas(callback, isVictory = false) {
+async function buildCertificateCanvas(callback, outcome = 'normal') {
     const config = CHARACTER_THEMES[currentCharacter];
     const canvas = document.createElement('canvas');
     canvas.width = 1200;
@@ -3203,20 +3441,20 @@ async function buildCertificateCanvas(callback, isVictory = false) {
 
         drawCertCornerEmoji(ctx, canvas, config);
 
-        ctx.strokeStyle = config.baseColor;
+        ctx.strokeStyle = config.certBorderColor || config.baseColor;
         ctx.lineWidth = 8;
         ctx.strokeRect(4, 4, canvas.width - 8, canvas.height - 8);
 
-        finishCertificate(canvas, ctx, callback, isVictory, textX);
+        finishCertificate(canvas, ctx, callback, outcome, textX);
     } catch (e) {
         console.warn('Certificate background/portrait failed to load — generating a text-only fallback certificate.', e);
         drawCertificateFallbackBase(config, canvas, ctx);
-        finishCertificate(canvas, ctx, callback, isVictory);
+        finishCertificate(canvas, ctx, callback, outcome);
     }
 }
 
-/** Kicks off certificate generation as soon as the results screen appears (see the big comment above). `isVictory` (from gameOverScreen()) flows through to finishCertificate()'s mode-label line. */
-function prepareCertificate(isVictory = false) {
+/** Kicks off certificate generation as soon as the results screen appears (see the big comment above). `outcome` (from gameOverScreen()) flows through to finishCertificate()'s mode-label line. */
+function prepareCertificate(outcome = 'normal') {
     certificateCanvas = null;
     const downloadBtn = document.getElementById('downloadCertificateBtn');
     const copyBtn = document.getElementById('copyCertificateBtn');
@@ -3227,7 +3465,7 @@ function prepareCertificate(isVictory = false) {
         certificateCanvas = canvas;
         if (downloadBtn) { downloadBtn.textContent = t('results.downloadCertificate'); downloadBtn.disabled = false; }
         if (copyBtn) copyBtn.disabled = false;
-    }, isVictory);
+    }, outcome);
 }
 
 function downloadCertificate() {
