@@ -151,7 +151,7 @@ const I18N = {
             gotIt: "Got it!",
             special: {
                 classic: { name: "Harmony Wave", desc: "doubles your Fever gain for 25 seconds." },
-                sakura: { name: "Blossom Blast", desc: "marks up to 4 tiles — click any of them anytime to blow up a 3x3 area around it. Your mana bar stays full until every marked tile is cleared." },
+                sakura: { name: "Blossom Blast", desc: "marks 2 tiles — click either of them anytime to blow up a 3x3 area around it. Your mana bar stays full until both are cleared." },
                 nightcord: { name: "Void World", desc: "instantly clears every tile of whichever icon covers the most of the board." },
                 snow: { name: "Glacial Freeze", desc: "an instant refill: +8s in Live Performance, +4 moves in Stage Clear, or +200 score in Leisure." },
                 racing: { name: "Turbo Blitz", desc: "aim anywhere and clear that entire row and column at once." },
@@ -399,7 +399,7 @@ const I18N = {
             gotIt: "わかった！",
             special: {
                 classic: { name: "ハーモニーウェーブ", desc: "25秒間、フィーバー獲得量が2倍になる。" },
-                sakura: { name: "ブロッサムブラスト", desc: "最大4つのタイルをマークする — いつでもどれかをクリックすると、その周囲3x3マスが爆発する。マークしたタイルをすべて解除するまで、マナバーは満タンのまま。" },
+                sakura: { name: "ブロッサムブラスト", desc: "タイルを2つマークする — いつでもどちらかをクリックすると、その周囲3x3マスが爆発する。両方解除するまで、マナバーは満タンのまま。" },
                 nightcord: { name: "ヴォイドワールド", desc: "盤面で最も多いアイコンのタイルを、種類ごと即座にすべて消す。" },
                 snow: { name: "グレイシャルフリーズ", desc: "即座に補給：ライブパフォーマンスなら+8秒、ステージクリアなら+4手、リラックスなら+200点。" },
                 racing: { name: "ターボブリッツ", desc: "盤面上のどこでも狙いを定め、その行と列をまるごと消す。" },

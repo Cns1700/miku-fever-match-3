@@ -298,7 +298,7 @@ const LIVE_PERFORMANCE_HARD_TIME_THRESHOLD = 22.5;
 // marks — see specialBlossomBreeze(). The mana bar stays locked full (see
 // updateManaHud()'s blossomPending check) until every one of them clears,
 // which is also what stops a second activation from stacking more on top.
-const BLOSSOM_BLAST_MAX_DETONATORS = 4;
+const BLOSSOM_BLAST_MAX_DETONATORS = 2;
 
 let currentCharacter = 'classic';
 let currentMode = 'stageClear'; // 'stageClear' | 'livePerformance' | 'leisure'
@@ -2875,6 +2875,21 @@ function specialBlossomBreeze() {
             if (farEnough(cand, existing.concat(picked))) picked.push(cand);
         }
         if (picked.length > best.length) best = picked;
+    }
+
+    // The >= 3 spacing rule can, in principle, leave zero valid spots (an
+    // unusually obstacle-crowded board). Silently placing nothing here
+    // would be worse than a placement that's merely closer together than
+    // ideal: updateBlossomBlastNotice() (called below) can't tell "nothing
+    // was ever placed" apart from "everything placed has already been
+    // cleared" — it would immediately release the mana lock with no
+    // detonator ever having appeared on the board, exactly as if the
+    // special had done nothing at all. Guaranteeing at least one, ignoring
+    // the spacing rule only for this single last-resort pick, closes that
+    // off — the player always sees at least one flashing tile and the mana
+    // bar only ever unlocks after they've actually cleared it.
+    if (best.length === 0 && openCells.length > 0) {
+        best = [openCells[Math.floor(Math.random() * openCells.length)]];
     }
 
     best.forEach(([r, c]) => { boardState[r][c].detonator = true; });
