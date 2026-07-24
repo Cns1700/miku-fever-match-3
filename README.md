@@ -31,7 +31,7 @@ Plays entirely in the browser, no install, no account, no ads. **[Available in E
   - **Live Performance** — a 90-second time attack with a late-game difficulty ramp. Finishing the clock is always a win now — there's no fail state here, only how good your final score is.
   - **Leisure** — no timer, no game over, just relax.
 - **A Fever system** shared across all modes: chain matches to level up Fever, hit milestones for bonus rounds and rewards.
-- **Six unique specials** — from Classic Miku's Fever-boosting Harmony Wave, to Sakura's Blossom Blast (marks two tiles for a 3x3 clear each, always spaced apart so neither blast steps on the other), to Space Singer's Cosmic Gravity, which lets you freely rearrange the board for a short window.
+- **Six unique specials** — from Classic Miku's Fever-boosting Harmony Wave, to Sakura's Blossom Blast (marks up to four tiles for a 3x3 clear each, always spaced apart so no two blasts overlap — your mana stays full and ready until you've cleared them all), to Space Singer's Cosmic Gravity, which lets you freely rearrange the board for a short window.
 - **Juicy match feedback** — cleared tiles burst into a small shower of theme-colored particles, and board refills drop into place with a bit of weight behind them instead of just popping in.
 - **Downloadable results certificates** — a shareable image generated after every run, with your score and a portrait of the character you played.
 - **English / Japanese language toggle**, switchable anytime from the header, including mid-run.

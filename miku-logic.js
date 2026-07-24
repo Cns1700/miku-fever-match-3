@@ -159,21 +159,24 @@ const CHARACTER_SFX = {
         swap: { src: 'sfx/miku-sfx/mixkit-futuristic-machine-glitch-2684.wav', start: 2.2, end: 3.45 },
         match: { src: 'sfx/miku-sfx/mixkit-futuristic-zoom-move-2626.wav', end: 1.84 },
         noMatch: { src: 'sfx/miku-sfx/mixkit-glitch-roar-1033.wav', end: 0.5 },
-        specialReady: { src: 'sfx/miku-sfx/mixkit-futuristic-zoom-move-2626.wav', end: 1.84 },
+        specialReady: { src: 'sfx/miku-sfx/mixkit-futuristic-doorbell-928.wav' },
         specialExecuted: { src: 'sfx/miku-sfx/mixkit-futuristic-cinematic-sweep-2635.wav' }
     },
     sakura: {
         swap: { src: 'sfx/sakura-sfx/benkirb-magic-ascend-1-259521.mp3', start: 2.2, end: 2.71 },
         match: { src: 'sfx/sakura-sfx/magiaz-hotel-bell-334109.mp3', end: 2.83 },
         noMatch: { src: 'sfx/sakura-sfx/mixkit-glitch-roar-1033.wav', end: 0.5 },
-        specialReady: { src: 'sfx/sakura-sfx/universfield-magic-spell-02-250240.mp3', end: 1.5 },
-        specialExecuted: { src: 'sfx/sakura-sfx/rescopicsound-fantasy-whoosh-ghostly-fast-228318.mp3', start: 1.9, end: 2.69 }
+        specialReady: { src: 'sfx/sakura-sfx/magiaz-hotel-bell-334109.mp3', end: 2.83 },
+        // Only ever triggered from the board-click detonation (see
+        // detonateBlossomTile()) — the button click that arms the special
+        // stays synth-only, see activateSpecial()'s sakura/racing exclusion.
+        specialExecuted: { src: 'sfx/sakura-sfx/universfield-magic-spell-02-250240.mp3', end: 1.5 }
     },
     nightcord: {
         swap: { src: 'sfx/25-ji-sfx/mixkit-digital-glitch-break-2951.wav', end: 0.57 },
         match: { src: 'sfx/25-ji-sfx/mixkit-small-electric-glitch-2595.wav', end: 0.48 },
         noMatch: { src: 'sfx/25-ji-sfx/mixkit-glitch-roar-1033.wav', end: 0.5 },
-        specialReady: { src: 'sfx/25-ji-sfx/mixkit-electric-whoosh-2596.wav', end: 1.73 },
+        specialReady: { src: 'sfx/25-ji-sfx/mixkit-glitch-roar-1033.wav', end: 0.5 },
         specialExecuted: { src: 'sfx/25-ji-sfx/mixkit-cinematic-whoosh-fast-transition-1492.wav' }
     },
     snow: {
@@ -188,16 +191,28 @@ const CHARACTER_SFX = {
         match: { src: 'sfx/racing-sfx/u_dn8ylcpe3v-f1_radio_sound-293747.mp3', start: 0.6, end: 0.99 },
         noMatch: { src: 'sfx/racing-sfx/mightuser-sound-of-breaks-squeaking-of-vehicle-hd-267282.mp3', start: 2.25 },
         specialReady: { src: 'sfx/racing-sfx/freesound_community-backfiring-vehicle-81982.mp3', end: 1.0 },
-        specialExecuted: { src: 'sfx/racing-sfx/u_mgq59j5ayf-sound-effect-car-crash-394903.mp3' }
+        // Only ever triggered from the board-click placement (see
+        // resolveTurboBlitz()) — the button click that enters aim mode
+        // stays synth-only, see activateSpecial()'s sakura/racing exclusion.
+        // Trim measured via ffmpeg silencedetect (-50dB/0.25s): audible
+        // content ends ~1.13s into a 1.63s file.
+        specialExecuted: { src: 'sfx/racing-sfx/mixkit-flying-fast-swoosh-1469.wav', end: 1.13 }
     },
     space: {
         swap: { src: 'sfx/space-sfx/mixkit-futuristic-radar-ping-1583.wav', end: 1.48 },
         match: { src: 'sfx/space-sfx/mixkit-break-tech-impact-2952.wav' },
         noMatch: { src: 'sfx/space-sfx/mixkit-falling-hit-757.wav', end: 0.76 },
-        specialReady: { src: 'sfx/space-sfx/mixkit-futuristic-glitch-robot-1039.wav', end: 1.67 },
+        specialReady: { src: 'sfx/space-sfx/mixkit-futuristic-radar-ping-1583.wav', end: 1.48 },
         specialExecuted: { src: 'sfx/space-sfx/mixkit-futuristic-cinematic-sweep-2635.wav' }
     }
 };
+
+// swap/match/noMatch are defined above but not currently called anywhere
+// (see executeSwap()/processMatchCycles()) — reverted to synth-only
+// (AudioSynth.playTap/playMatch/playMegaMatch/playError) for those three
+// events. Left in place rather than deleted so the tuned trim points aren't
+// lost if downloaded swap/match/noMatch sound is ever wanted again — only
+// specialReady/specialExecuted are live.
 
 const CharacterSFX = {
     /** Plays one trimmed sound `{src, start, end}`, skipping leading dead air and stopping before trailing dead air. */
@@ -207,21 +222,26 @@ const CharacterSFX = {
             const instance = new Audio(sound.src);
             instance.volume = 0.55;
             const start = sound.start || 0;
-            const begin = () => {
-                try { instance.currentTime = start; } catch (e) { /* seeking before ready on some browsers — ignore */ }
-                instance.play().catch(() => {});
-                if (sound.end) {
-                    const playMs = Math.max(50, (sound.end - start) * 1000);
-                    setTimeout(() => { try { instance.pause(); } catch (e) { /* no-op */ } }, playMs);
-                }
-            };
-            // A fresh Audio() needs its own metadata load before currentTime
-            // seeks reliably — cloning a preloaded element doesn't carry
-            // that over, so each play is a new element rather than a clone.
-            if (instance.readyState >= 1) {
-                begin();
-            } else {
-                instance.addEventListener('loadedmetadata', begin, { once: true });
+            // .play() fires immediately/synchronously here, in the same tick
+            // as whatever click triggered this call — browsers can silently
+            // refuse to autoplay audio once too much async time has passed
+            // since the last real user gesture, and the previous version
+            // waited for the fresh Audio()'s loadedmetadata event (needed to
+            // seek reliably) BEFORE calling play(), which could cross that
+            // window on a slow load and get quietly blocked by the .catch()
+            // below with no visible error. Seeking to `start` a few ms after
+            // playback has already begun (whichever of "now" or "metadata's
+            // ready" comes first) is a much smaller downside than risking
+            // the sound not playing at all.
+            instance.play().catch(() => {});
+            if (start > 0) {
+                const seek = () => { try { instance.currentTime = start; } catch (e) { /* no-op */ } };
+                if (instance.readyState >= 1) seek();
+                else instance.addEventListener('loadedmetadata', seek, { once: true });
+            }
+            if (sound.end) {
+                const playMs = Math.max(50, (sound.end - start) * 1000);
+                setTimeout(() => { try { instance.pause(); } catch (e) { /* no-op */ } }, playMs);
             }
         } catch (e) {
             console.warn('Character SFX playback error', sound, e);
@@ -274,6 +294,11 @@ const STAGE_CLEAR_FINAL_LEVEL = 100;
 // Live Performance's late-game difficulty ramp kicks in once timeLeft drops
 // below this (25% of the 90s starting clock) — see triggerLivePerformanceHardMode().
 const LIVE_PERFORMANCE_HARD_TIME_THRESHOLD = 22.5;
+// Sakura's Blossom Blast: how many detonator tiles a single activation
+// marks — see specialBlossomBreeze(). The mana bar stays locked full (see
+// updateManaHud()'s blossomPending check) until every one of them clears,
+// which is also what stops a second activation from stacking more on top.
+const BLOSSOM_BLAST_MAX_DETONATORS = 4;
 
 let currentCharacter = 'classic';
 let currentMode = 'stageClear'; // 'stageClear' | 'livePerformance' | 'leisure'
@@ -853,6 +878,12 @@ function startGameWithMode(mode) {
     document.getElementById('gameScreen').classList.remove('hidden');
     resetGame();
     showHowToPlay(true);
+    // Opportunistic prefetch — see loadCertAssets()'s comment. Not awaited:
+    // a run just started, so there's a whole playthrough's worth of time
+    // for this to finish in the background before it's actually needed.
+    // Errors here are silently swallowed on purpose — buildCertificateCanvas()
+    // retries this same load (and has its own fallback) when it's actually needed.
+    loadCertAssets().catch(() => {});
 }
 
 /**
@@ -873,6 +904,7 @@ function backToMenu() {
     document.getElementById('stageVictoryChoiceOverlay').classList.add('hidden');
     document.getElementById('pauseOverlay').classList.add('hidden');
     hideHowToPlay();
+    hidePortraitSpeechBubble();
 
     document.getElementById('gameScreen').classList.add('hidden');
     document.getElementById('modeSelectScreen').classList.add('hidden');
@@ -899,6 +931,7 @@ function backToModeSelect() {
     document.getElementById('stageVictoryChoiceOverlay').classList.add('hidden');
     document.getElementById('pauseOverlay').classList.add('hidden');
     hideHowToPlay();
+    hidePortraitSpeechBubble();
 
     document.getElementById('gameScreen').classList.add('hidden');
     document.getElementById('modeSelectScreen').classList.remove('hidden');
@@ -1154,6 +1187,7 @@ function resetGame() {
     document.getElementById('resultsOverlay').classList.add('hidden');
     document.getElementById('pauseOverlay').classList.add('hidden');
     document.getElementById('boardBorder').classList.remove('fever-active-border');
+    hidePortraitSpeechBubble();
     updateManaHud();
     updateChallengeHud();
 
@@ -1224,6 +1258,11 @@ function chargeMana(amount) {
  * ready" sound exactly once on the rising edge (manaEnergy first reaching
  * 100), tracked via `specialWasReady` so it doesn't replay on every HUD
  * refresh while sitting at full.
+ *
+ * For Sakura specifically, "ready" also requires no Blossom Blast
+ * detonators still pending — the bar itself stays visually full the whole
+ * time they're out (see updateBlossomBlastNotice()), but the button stays
+ * locked so a second click can't stack more on top of the first batch.
  */
 function updateManaHud() {
     const fill = document.getElementById('manaBarFill');
@@ -1232,7 +1271,8 @@ function updateManaHud() {
     if (fill) fill.style.height = `${manaEnergy}%`;
     if (track) track.setAttribute('aria-valuenow', Math.round(manaEnergy));
     if (btn) {
-        const ready = manaEnergy >= 100;
+        const blossomPending = currentCharacter === 'sakura' && countActiveDetonators() > 0;
+        const ready = manaEnergy >= 100 && !blossomPending;
         btn.disabled = !ready;
         btn.classList.toggle('special-ready', ready);
         if (ready && !specialWasReady) {
@@ -1910,7 +1950,6 @@ function handleGridPlacementClick(e) {
 async function executeSwap(r1, c1, r2, c2) {
     isProcessing = true;
     selectedCell = null;
-    CharacterSFX.playEvent('swap');
 
     const cell1 = document.getElementById(`cell-${r1}-${c1}`);
     const cell2 = document.getElementById(`cell-${r2}-${c2}`);
@@ -1954,7 +1993,6 @@ async function executeSwap(r1, c1, r2, c2) {
         updatePortrait('normal');
     } else {
         AudioSynth.playError();
-        CharacterSFX.playEvent('noMatch');
 
         const nextCell1 = document.getElementById(`cell-${r1}-${c1}`);
         const nextCell2 = document.getElementById(`cell-${r2}-${c2}`);
@@ -2151,9 +2189,6 @@ async function processMatchCycles() {
         } else {
             AudioSynth.playMatch();
         }
-        // Character match sound — fires every cascade step ("plays during
-        // chains as well" per the design doc), layered on top of the synth.
-        CharacterSFX.playEvent('match');
 
         let basePoints = matches.length * 50;
         // Chain multiplier: +50% per cascade step beyond the first, so a
@@ -2239,6 +2274,17 @@ async function processMatchCycles() {
             }
             boardState[m.row][m.col] = null;
         });
+
+        // Checked right here (inside the loop, immediately after tiles
+        // actually clear) rather than after the loop exits or at the end
+        // of the function — a normal 3-in-a-row can sweep up one of
+        // Sakura's Blossom Blast detonator tiles same as any other icon,
+        // and checkLevelProgress()/the movesLeft check below can both
+        // `return` early once the loop is done, which would skip a check
+        // placed after them. See updateBlossomBlastNotice()'s own comment
+        // for why this reads the board live instead of decrementing a
+        // separate counter.
+        updateBlossomBlastNotice();
 
         if (matches.length > 0) {
             lastMatchedCell = matches[matches.length - 1];
@@ -2639,10 +2685,26 @@ async function activateSpecial() {
 
     const config = CHARACTER_THEMES[currentCharacter];
     AudioSynth.playSpecial();
-    CharacterSFX.playEvent('specialExecuted');
+    // Sakura and Racing are two-step specials — this button click only arms
+    // them (marks detonator tiles / enters aim mode); the downloaded
+    // "executed" sound plays later, at the actual board click that resolves
+    // the effect (see detonateBlossomTile() / resolveTurboBlitz()). Every
+    // other character resolves instantly right here, so this click IS their
+    // "executed" moment.
+    if (currentCharacter !== 'sakura' && currentCharacter !== 'racing') {
+        CharacterSFX.playEvent('specialExecuted');
+    }
     playSpecialBurst(config.baseColor);
 
-    manaEnergy = 0;
+    // Sakura's mana bar deliberately does NOT reset here — it stays full
+    // until every Blossom Blast detonator this activation places has been
+    // cleared (see updateBlossomBlastNotice(), called from
+    // specialBlossomBreeze() right after it places them). Every other
+    // character resolves fully in this same call, so resetting immediately
+    // is correct for them.
+    if (currentCharacter !== 'sakura') {
+        manaEnergy = 0;
+    }
     updateManaHud();
 
     const specials = {
@@ -2762,49 +2824,135 @@ function specialHarmonyWave() {
 }
 
 /**
- * Sakura's Blossom Blast: flags 2 random board tiles as hot-pink flashing
- * "detonators" instead of clearing anything immediately. The player can
- * click either one at any later point (see handleCellSelect() /
- * detonateBlossomTile() below) to clear a 3x3 radius around it.
+ * Sakura's Blossom Blast: flags up to BLOSSOM_BLAST_MAX_DETONATORS random
+ * board tiles as hot-pink flashing "detonators" instead of clearing
+ * anything immediately. The player can click any of them at any later
+ * point (see handleCellSelect() / detonateBlossomTile() below) to clear a
+ * 3x3 radius around it.
  *
- * The two picks are kept a Chebyshev distance of >= 3 apart so their 3x3
- * blast radii never touch or overlap — each detonator gets its own
- * dedicated clear area rather than double-dipping the same tiles.
+ * Every pick is kept a Chebyshev distance of >= 3 from every OTHER pick
+ * (this activation's and, defensively, any already on the board) so no two
+ * 3x3 blast radii ever touch or overlap. In normal play there shouldn't be
+ * any pre-existing detonators when this runs — the mana bar stays locked
+ * full (see updateManaHud()) until the last one from an activation clears,
+ * which is what stops a second activation from stacking more on top — but
+ * the existing-detonator check costs nothing and means this can't
+ * over-place if that guard is ever bypassed.
+ *
+ * Greedy placement depends on shuffle order — one unlucky shuffle could
+ * leave a slot unfilled even though a valid arrangement exists elsewhere
+ * on the board, so this tries a handful of shuffles and keeps whichever
+ * placed the most, stopping the instant one fills every slot.
  */
 function specialBlossomBreeze() {
-    const candidates = [];
+    const existing = [];
+    const openCells = [];
     for (let r = 0; r < GRID_SIZE; r++) {
         for (let c = 0; c < GRID_SIZE; c++) {
-            if (boardState[r][c] && !boardState[r][c].detonator) candidates.push([r, c]);
+            if (!boardState[r][c]) continue;
+            if (boardState[r][c].detonator) existing.push([r, c]);
+            else openCells.push([r, c]);
         }
     }
-    for (let i = candidates.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        const temp = candidates[i];
-        candidates[i] = candidates[j];
-        candidates[j] = temp;
-    }
 
-    const first = candidates[0];
-    const rest = candidates.slice(1);
-    let second = rest.find(([r, c]) =>
-        Math.max(Math.abs(r - first[0]), Math.abs(c - first[1])) >= 3
+    const farEnough = (cand, chosen) => chosen.every(([r, c]) =>
+        Math.max(Math.abs(cand[0] - r), Math.abs(cand[1] - c)) >= 3
     );
-    // Practically unreachable on an 8x8 board, but if every remaining open
-    // tile happens to be within range (e.g. the board is mostly obstacles),
-    // fall back to whichever one is farthest rather than skipping it.
-    if (!second && rest.length > 0) {
-        second = rest.reduce((farthest, cand) => {
-            const d = Math.max(Math.abs(cand[0] - first[0]), Math.abs(cand[1] - first[1]));
-            const dFarthest = Math.max(Math.abs(farthest[0] - first[0]), Math.abs(farthest[1] - first[1]));
-            return d > dFarthest ? cand : farthest;
-        });
+    const slotsToFill = Math.max(0, BLOSSOM_BLAST_MAX_DETONATORS - existing.length);
+
+    let best = [];
+    for (let attempt = 0; attempt < 8 && best.length < slotsToFill; attempt++) {
+        const shuffled = openCells.slice();
+        for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            const temp = shuffled[i];
+            shuffled[i] = shuffled[j];
+            shuffled[j] = temp;
+        }
+        const picked = [];
+        for (const cand of shuffled) {
+            if (picked.length >= slotsToFill) break;
+            if (farEnough(cand, existing.concat(picked))) picked.push(cand);
+        }
+        if (picked.length > best.length) best = picked;
     }
 
-    const chosen = second ? [first, second] : [first];
-    chosen.forEach(([r, c]) => { boardState[r][c].detonator = true; });
+    best.forEach(([r, c]) => { boardState[r][c].detonator = true; });
     renderBoard();
     showBonusPopup(t('popup.blossomBlast'), CHARACTER_THEMES.sakura.baseColor);
+    updateBlossomBlastNotice();
+}
+
+/**
+ * Live count of Sakura's Blossom Blast detonator tiles currently on the
+ * board. Called from updateManaHud(), which itself runs mid-resetGame() —
+ * before that run's generateBoard() call — so `boardState[r]` may not be
+ * populated yet (freshly `[]` on the very first game this page load) or
+ * may still hold the previous run's board momentarily; skipping unpopulated
+ * rows instead of assuming GRID_SIZE rows always exist avoids crashing on
+ * either case. (manaEnergy is already reset to 0 by that point regardless,
+ * so a stale leftover count from the previous run can't actually affect
+ * the Special button's ready-state — see updateManaHud()'s `ready` check.)
+ */
+function countActiveDetonators() {
+    let count = 0;
+    for (let r = 0; r < GRID_SIZE; r++) {
+        if (!boardState[r]) continue;
+        for (let c = 0; c < GRID_SIZE; c++) {
+            if (boardState[r][c] && boardState[r][c].detonator) count++;
+        }
+    }
+    return count;
+}
+
+/**
+ * Keeps Sakura's Blossom Blast state in sync with the live board — call
+ * this after anything that could have changed how many `.detonator` tiles
+ * remain (placing them, the player detonating one, or a normal match
+ * cascade sweeping one up same as any other icon). Deliberately doesn't
+ * track a separate pending-count variable: a live scan of boardState can't
+ * drift out of sync the way a manually incremented/decremented counter
+ * could if some future tile-clearing path forgets to update it — see the
+ * call site inside processMatchCycles() for the specific case (a normal
+ * match) this was written to catch.
+ */
+function updateBlossomBlastNotice() {
+    if (currentCharacter !== 'sakura') return;
+    const remaining = countActiveDetonators();
+    if (remaining > 0) {
+        showPortraitSpeechBubble(t('portraitNotice.blossomBlastPending', { count: remaining }));
+        // Re-syncs the Special button's disabled state (see updateManaHud()'s
+        // blossomPending check) — needed right when detonators are freshly
+        // placed, since activateSpecial() already refreshed the HUD once
+        // *before* specialBlossomBreeze() ran, back when the count was
+        // still 0.
+        updateManaHud();
+        return;
+    }
+    hidePortraitSpeechBubble();
+    if (manaEnergy >= 100) {
+        // Held full since activation specifically so a second click
+        // couldn't stack more detonators on top — now that the last one
+        // is gone, let it actually reset so the normal recharge cycle (and
+        // specialReady's rising-edge SFX) starts fresh next time it fills.
+        manaEnergy = 0;
+    }
+    updateManaHud();
+}
+
+/** Shows the persistent notice bubble anchored above the portrait — see #portraitSpeechBubble in index.html. */
+function showPortraitSpeechBubble(text) {
+    const bubble = document.getElementById('portraitSpeechBubble');
+    const textEl = document.getElementById('portraitSpeechBubbleText');
+    if (!bubble || !textEl) return;
+    textEl.textContent = text;
+    bubble.classList.remove('hidden');
+}
+
+/** Hides the persistent notice bubble anchored above the portrait. */
+function hidePortraitSpeechBubble() {
+    const bubble = document.getElementById('portraitSpeechBubble');
+    if (bubble) bubble.classList.add('hidden');
 }
 
 /**
@@ -2836,10 +2984,20 @@ async function detonateBlossomTile(row, col) {
     }
     applyDirectClearRewards(blastCells);
     blastCells.forEach(({ row: r, col: c }) => { boardState[r][c] = null; });
+    // This 3x3 clear is a direct boardState mutation, not a normal match —
+    // it never touches processMatchCycles()'s matches.forEach loop (that
+    // only runs for whatever CASCADE this blast might trigger afterward),
+    // so its own updateBlossomBlastNotice() hook there never sees this
+    // clear happen. Called explicitly here so the notice/mana-lock updates
+    // even when the blast doesn't chain into any follow-up match at all —
+    // the common case, and the one the earlier version of this function
+    // silently got wrong (bubble stuck on the original count, mana never
+    // released, even after every detonator was gone).
+    updateBlossomBlastNotice();
 
     score += 150;
     document.getElementById('scoreDisplay').innerText = String(score).padStart(6, '0');
-    AudioSynth.playSpecial();
+    CharacterSFX.playEvent('specialExecuted');
     const fallDistances = collapseAndRefill();
     renderBoard();
     animateBoardDrop(fallDistances);
@@ -2931,6 +3089,7 @@ async function resolveTurboBlitz(row, col) {
 
     score += 200;
     document.getElementById('scoreDisplay').innerText = String(score).padStart(6, '0');
+    CharacterSFX.playEvent('specialExecuted');
     const fallDistances = collapseAndRefill();
     renderBoard();
     animateBoardDrop(fallDistances);
@@ -3368,6 +3527,45 @@ function finishCertificate(canvas, ctx, callback, outcome = 'normal', textX = 48
     callback(canvas);
 }
 
+// Resolves once cert-assets.js (CERT_PORTRAIT_DATA/CERT_BACKGROUND_DATA) has
+// loaded — memoized so concurrent callers share one <script> injection
+// instead of racing to add it twice. See loadCertAssets() below.
+let certAssetsLoadPromise = null;
+
+/**
+ * Lazily loads cert-assets.js — see that file's own header comment for why
+ * it's ~5MB of pre-embedded data: URIs. Deliberately NOT one of index.html's
+ * static <script> tags: it's only ever needed once a run ends and the
+ * results screen builds a certificate, so loading it unconditionally at
+ * page load meant nothing was interactive — not character select, not mode
+ * select, not actual gameplay — until 5MB had finished downloading. That's
+ * instant on localhost (which is why this was easy to miss) but a real,
+ * visible stall over an actual network. Called opportunistically once a run
+ * actually starts (see startGameWithMode()) so it's very likely already
+ * cached by the time a results screen needs it; buildCertificateCanvas()
+ * also awaits this same promise directly as a safety net for a player who
+ * finishes faster than that background fetch.
+ */
+function loadCertAssets() {
+    if (!certAssetsLoadPromise) {
+        certAssetsLoadPromise = new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = 'cert-assets.js';
+            script.onload = () => resolve();
+            script.onerror = () => reject(new Error('cert-assets.js failed to load'));
+            document.body.appendChild(script);
+        }).catch(err => {
+            // Don't memoize a failure — a transient network blip during the
+            // opportunistic prefetch shouldn't permanently poison the promise
+            // buildCertificateCanvas() later awaits as its own safety net;
+            // reset so a later call gets a fresh <script> tag to retry with.
+            certAssetsLoadPromise = null;
+            throw err;
+        });
+    }
+    return certAssetsLoadPromise;
+}
+
 /**
  * Builds the certificate canvas: background photo (cover-fit) + full-body
  * character portrait (contain-fit — shrunk to fit, NEVER cropped) + border,
@@ -3389,6 +3587,12 @@ async function buildCertificateCanvas(callback, outcome = 'normal') {
     const ctx = canvas.getContext('2d');
 
     try {
+        // Safety net for whichever player reaches the results screen before
+        // startGameWithMode()'s opportunistic prefetch has finished — see
+        // loadCertAssets()'s own comment. A no-op await if it's already
+        // resolved.
+        await loadCertAssets();
+
         // Explicitly load this character's certificate font alongside the
         // images: an @font-face rule only actually fetches the font file
         // once something on the page needs it, and canvas text drawing

@@ -10,12 +10,22 @@ Internal reference for maintaining this project. For the player-facing descripti
 | `miku-style.css` | All styling. Organized in numbered sections (search `====` banners). Character theming flows through 3 CSS custom properties (`--theme-color`, `--theme-color-soft`, `--theme-color-glow`) set once per character in `selectCharacter()`, not hardcoded per-element. |
 | `miku-logic.js` | All game logic, ~3500 lines, organized in numbered `====` sections (search for `1. AUDIO SYNTHESIS`, `2. GLOBAL GAME STATE`, etc. — jump to a section header to orient yourself). |
 | `i18n.js` | English/Japanese dictionary + the `t()`/`applyTranslations()`/`setLanguage()` helpers. Must load before `miku-logic.js`. |
-| `cert-assets.js` | Generated, not hand-edited. Base64 `data:` URIs of every certificate background/portrait, pre-resized. Regenerate from `v-j-rs/` source files if art changes (see that file's header comment for the exact recipe). |
-| `Miku-cards/*.png` | Roster card + in-game sidebar portraits (1920×1440, alpha PNG). |
+| `cert-assets.js` | Generated, not hand-edited. Base64 `data:` URIs of every certificate background/portrait, pre-resized — still ~5MB even resized, since it's 12 full images as base64 text. Regenerate from `v-j-rs/` source files if art changes (see that file's header comment for the exact recipe). **Not** a static `<script>` tag in index.html — see Performance below. |
+| `Miku-cards/*.png` | Roster card + in-game sidebar portraits (1920×1440, alpha PNG). The `.xcf` GIMP project files behind them live outside this repo now (moved out — they were never read at runtime or referenced in code, just dead weight in every clone); ask the project owner if you need the editable source for a portrait update. |
 | `v-j-rs/*-resultscreen.png` | Source art for certificate portraits — feeds `cert-assets.js`, not read at runtime directly. |
-| `miku-icons-sets/`, `game-audio/`, `sfx/` | Board icons, music, and per-character sound effects. |
+| `miku-icons-sets/`, `game-audio/`, `sfx/` | Board icons, music, and per-character sound effects. `game-audio/` is the small handful of sounds truly shared across every character; everything character-specific lives only in that character's own `sfx/*-sfx/` folder (some shared files are ALSO duplicated into each character folder purely for browsing convenience — see the comment on `SFX_FILES` in `miku-logic.js`). |
 
 No build step, no bundler, no `node_modules` at runtime — this is plain `<script src>` tags meant to run straight from `file://` or any static host. `node`/`npm` only show up in this repo for **dev-time linting** (`html-validate`), never shipped.
+
+## Performance: cert-assets.js is lazy-loaded
+
+`cert-assets.js` is deliberately not one of index.html's static `<script>` tags. It's ~5MB — trivial over `file://` or localhost, which is exactly why this was easy to miss, but a real multi-second stall over an actual network, and since scripts before it in document order block on it, NOTHING was interactive (not roster select, not mode select, not gameplay) until it finished loading, even though `CERT_PORTRAIT_DATA`/`CERT_BACKGROUND_DATA` are only ever read once a run ends and a certificate actually needs building.
+
+`loadCertAssets()` (in `miku-logic.js`, right before `buildCertificateCanvas()`) injects the `<script>` tag on demand instead, memoizing the in-flight promise so concurrent callers share one request — and un-memoizing it on failure so a later call gets a fresh retry rather than an instantly-rejected stale promise. Two call sites:
+- `startGameWithMode()` fires it opportunistically (not awaited) the moment a run actually starts, so it's very likely already cached in the background by the time a results screen needs it.
+- `buildCertificateCanvas()` awaits the same promise directly as a safety net, for whichever player reaches a results screen faster than that background fetch finished.
+
+If cert-assets.js ever needs to go back to being a static tag (e.g. if this lazy-load approach ever causes more trouble than the load-time problem it solves), removing the two `loadCertAssets()` call sites and re-adding the `<script src="cert-assets.js">` tag is the whole revert — the format of `CERT_PORTRAIT_DATA`/`CERT_BACKGROUND_DATA` themselves didn't change.
 
 ## Core game loop
 
@@ -58,11 +68,33 @@ One per character, unlocked at `manaEnergy === 100`, dispatched from `activateSp
 | Character | Special | Mechanic |
 |---|---|---|
 | Classic | Harmony Wave | 25s ×2 Fever-gain buff, no board mutation |
-| Sakura | Blossom Blast | Marks 2 tiles, kept a Chebyshev distance of ≥3 apart so their 3×3 clear zones never touch; click either later to detonate it |
+| Sakura | Blossom Blast | Marks up to `BLOSSOM_BLAST_MAX_DETONATORS` (4) tiles, each kept a Chebyshev distance of ≥3 from every other so no two 3×3 clear zones touch; click any later to detonate it — see below |
 | 25-ji | Void World | Clears every tile of the board's most common icon, random tie-break |
 | Snow | Glacial Freeze | Instant resource refill, varies by mode |
 | Racing | Turbo Blitz | Aim mode; clears a full row + column |
 | Space | Cosmic Gravity | 25s of unrestricted tile placement — swaps persist even without a match (see `executeSwap`'s `freeMoveModeActive` branch) — with `cosmicGravityFailsafe()` reshuffling for free if that leaves the board dead once the window closes |
+
+### Blossom Blast's mana lock
+
+Sakura's is the one special that isn't fully resolved by the time `activateSpecial()` returns — placing the detonators is instant, but *using* them happens later, on whichever board clicks the player gets around to. `manaEnergy` deliberately does NOT reset to 0 when she activates (see the `currentCharacter !== 'sakura'` guard in `activateSpecial()`): it stays visually full until every detonator this activation placed is gone, and `updateManaHud()`'s `ready` check separately requires `countActiveDetonators() === 0` for Sakura specifically, so the button itself stays locked the whole time even though the bar reads 100%. That's what stops a second activation from stacking more detonators on top of an unfinished batch — confirmed by direct testing that a bypassed re-activation (calling `activateSpecial()` again while 4 are already down) is a no-op, since `specialBlossomBreeze()`'s own `slotsToFill` calculation is `BLOSSOM_BLAST_MAX_DETONATORS - existing.length`, already 0 in that case.
+
+`updateBlossomBlastNotice()` is the single sync point — call it after *anything* that could change how many `.detonator` tiles remain, and it live-scans `boardState` (via `countActiveDetonators()`) rather than trusting a decremented counter, updates the portrait's speech bubble (`#portraitSpeechBubble`, shown/hidden via `showPortraitSpeechBubble()`/`hidePortraitSpeechBubble()`) with the remaining count, and releases the mana lock once that count hits 0. It's called from three places, and all three matter:
+- `specialBlossomBreeze()`, right after placing the detonators (shows the bubble, re-locks the button).
+- `detonateBlossomTile()`, right after its own direct 3x3 clear — **not** optional: that clear is a direct `boardState` mutation, not a normal match, so it never touches `processMatchCycles()`'s loop. An earlier version of this only hooked `processMatchCycles()` and the bubble/mana lock would silently never update on a blast that didn't chain into a follow-up match — the common case.
+- Inside `processMatchCycles()`'s own loop, immediately after its `matches.forEach` clear block. A detonator tile still carries a normal `.type` underneath the flag, so a completely ordinary 3-in-a-row can sweep one up without the player ever clicking it — this is the fail-safe for that. Placed *inside* the loop (not after it, and not at the function's end) specifically because `checkLevelProgress()`/the moves-exhausted check further down both `return` early once the loop exits, which would skip a check placed after them.
+
+(`reshuffleBoard()` already carried `.detonator` flags through a reshuffle correctly before any of this — that fix predates the mana lock — so it isn't a fourth call site.)
+
+## Sound system
+
+Three layers, all in miku-logic.js §1:
+- **`AudioSynth`** — procedurally generated tones (Web Audio oscillators), the same for every character. Covers almost everything: tile select, swap, match/mega-match, no-match, Fever level-up, reshuffle, the Special button's own click, victory/loss stings.
+- **`SFX`** — a handful of real audio files shared across every character (`SFX_FILES`): mega-match impact, Fever bonus round start, timed-challenge success, 25-ji's themed-tile clear. Preloaded once at startup, cloned per play so overlapping triggers don't cut each other off.
+- **`CharacterSFX`** — real per-character audio files (`CHARACTER_SFX`). Five events are *defined* per character (swap/match/noMatch/specialReady/specialExecuted), but only **specialReady** and **specialExecuted** are actually called anywhere right now — swap/match/noMatch were deliberately reverted to synth-only (their data stays in `CHARACTER_SFX` rather than being deleted, in case downloaded sound for those is wanted again later; see the comment right after the object).
+
+`specialExecuted`'s *trigger point* isn't the same for every character. For Classic/25-ji/Snow/Space, the Special button click fully resolves the special right there, so that click is its "executed" moment. Sakura and Racing are two-step (button arms it, a later board click resolves it) — see `activateSpecial()`'s `currentCharacter !== 'sakura' && currentCharacter !== 'racing'` guard, which skips `specialExecuted` on their button click specifically, and `detonateBlossomTile()`/`resolveTurboBlitz()`, which fire it instead once the effect actually lands.
+
+`CharacterSFX.play()` calls `.play()` on a fresh `Audio()` *before* seeking to a sound's trim-start, not after — browsers can silently refuse to autoplay once too much async time has passed since the last real user gesture, and waiting on a freshly-constructed element's `loadedmetadata` event (needed to seek reliably) before ever calling `play()` risked crossing that window on a slow load. Seeking a few ms into playback instead of before it starts is the smaller downside.
 
 ## Certificate pipeline
 

@@ -247,6 +247,15 @@
                      crop/zoom on either surface. -->
                 <div class="portrait-mana-row">
                     <div class="portrait-column">
+                        <!-- Persistent notice bubble, e.g. Blossom Blast's
+                             pending-detonator count — see
+                             showPortraitSpeechBubble() in miku-logic.js.
+                             Positioned/shown in CSS only when un-hidden, so
+                             it doesn't reserve layout space the rest of the
+                             time. -->
+                        <div id="portraitSpeechBubble" class="speech-bubble hidden" role="status" aria-live="polite">
+                            <span id="portraitSpeechBubbleText"></span>
+                        </div>
                         <figure class="portrait-viewport">
                             <div id="portraitAura" class="portrait-aura" aria-hidden="true"></div>
                             <div class="portrait-float-wrapper">
@@ -560,16 +569,19 @@
     </footer>
 
     <!-- Language dictionary (English/Japanese) — must load before
-         miku-logic.js, which calls t()/applyTranslations() throughout. -->
-    <script src="i18n.js"></script>
+         miku-logic.js, which calls t()/applyTranslations() throughout.
+         `defer` lets this and miku-logic.js fetch in parallel instead of
+         strictly sequentially, while still guaranteeing this one finishes
+         executing first (defer preserves document order). -->
+    <script src="i18n.js" defer></script>
 
-    <!-- Pre-encoded certificate images (base64 data: URIs) — must load before
-         miku-logic.js, which reads CERT_PORTRAIT_DATA/CERT_BACKGROUND_DATA
-         from it. See that file's header comment for why these are embedded
-         instead of just pointing at the v-j-rs/ files directly. -->
-    <script src="cert-assets.js"></script>
-
-    <!-- Modular Game Script -->
-    <script src="miku-logic.js"></script>
+    <!-- Modular Game Script. cert-assets.js (~5MB of pre-encoded certificate
+         images) is intentionally NOT a static <script> tag here — it's only
+         needed once a run ends and the results screen builds a certificate,
+         so it's lazy-loaded on demand instead (see loadCertAssets() in this
+         file) rather than blocking every visitor's first interaction with
+         the roster/mode-select screens on a 5MB download they may never
+         even need. -->
+    <script src="miku-logic.js" defer></script>
 </body>
 </html>

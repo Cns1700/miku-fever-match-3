@@ -151,7 +151,7 @@ const I18N = {
             gotIt: "Got it!",
             special: {
                 classic: { name: "Harmony Wave", desc: "doubles your Fever gain for 25 seconds." },
-                sakura: { name: "Blossom Blast", desc: "marks 2 tiles — click either one anytime to blow up a 3x3 area around it." },
+                sakura: { name: "Blossom Blast", desc: "marks up to 4 tiles — click any of them anytime to blow up a 3x3 area around it. Your mana bar stays full until every marked tile is cleared." },
                 nightcord: { name: "Void World", desc: "instantly clears every tile of whichever icon covers the most of the board." },
                 snow: { name: "Glacial Freeze", desc: "an instant refill: +8s in Live Performance, +4 moves in Stage Clear, or +200 score in Leisure." },
                 racing: { name: "Turbo Blitz", desc: "aim anywhere and clear that entire row and column at once." },
@@ -250,6 +250,14 @@ const I18N = {
             glacialFreezeMoves: "+4 Moves",
             glacialFreezeScore: "+200",
             cosmicGravity: "Cosmic Gravity! Move Any Tile — 25s"
+        },
+        // Persistent speech-bubble notice by the portrait — see
+        // showPortraitSpeechBubble() in miku-logic.js. Currently only used
+        // for Blossom Blast's pending-detonator count, but kept as its own
+        // top-level key (not nested under popup) since it's a different UI
+        // element (sticks around until dismissed, not a fading toast).
+        portraitNotice: {
+            blossomBlastPending: "🌸 {count} left — tap the glowing tiles!"
         },
         challenge: {
             themedTileBanner: "🧊 Themed Tiles: {remaining} left — {seconds}s",
@@ -391,7 +399,7 @@ const I18N = {
             gotIt: "わかった！",
             special: {
                 classic: { name: "ハーモニーウェーブ", desc: "25秒間、フィーバー獲得量が2倍になる。" },
-                sakura: { name: "ブロッサムブラスト", desc: "タイルを2つマークする — いつでもどちらかをクリックすると、その周囲3x3マスが爆発する。" },
+                sakura: { name: "ブロッサムブラスト", desc: "最大4つのタイルをマークする — いつでもどれかをクリックすると、その周囲3x3マスが爆発する。マークしたタイルをすべて解除するまで、マナバーは満タンのまま。" },
                 nightcord: { name: "ヴォイドワールド", desc: "盤面で最も多いアイコンのタイルを、種類ごと即座にすべて消す。" },
                 snow: { name: "グレイシャルフリーズ", desc: "即座に補給：ライブパフォーマンスなら+8秒、ステージクリアなら+4手、リラックスなら+200点。" },
                 racing: { name: "ターボブリッツ", desc: "盤面上のどこでも狙いを定め、その行と列をまるごと消す。" },
@@ -490,6 +498,9 @@ const I18N = {
             glacialFreezeMoves: "+4手",
             glacialFreezeScore: "+200",
             cosmicGravity: "コズミックグラビティ！どのタイルでも移動可能 — 25秒"
+        },
+        portraitNotice: {
+            blossomBlastPending: "🌸 残り{count}個 — 光るタイルをタップ！"
         },
         challenge: {
             themedTileBanner: "🧊 テーマタイル残り：{remaining} — {seconds}秒",
