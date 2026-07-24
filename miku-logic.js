@@ -338,6 +338,19 @@ let challengeTimeLeft = 0;
 let challengeIconType = null;
 let challengeIconProgress = 0;
 
+// True only while a Blossom Blast activation is actually in progress — set
+// by specialBlossomBreeze() the moment it places its detonators, cleared
+// by updateBlossomBlastNotice() once the last one clears. NOT the same
+// thing as "countActiveDetonators() > 0": that count is also 0 before
+// Sakura has ever used the special at all this run, and updateBlossomBlastNotice()
+// runs on every cascade step (it has to, to catch a detonator getting
+// swept into a normal match) — without this flag it couldn't tell "mana
+// just reached 100 from ordinary play, nothing to do" apart from "the
+// last detonator from a real activation just cleared, release the lock",
+// and would reset a perfectly normal, never-yet-claimed full mana bar
+// back to 0 the instant it filled.
+let blossomBlastActive = false;
+
 // Cached certificate canvas, built as soon as the results screen opens so
 // Download/Copy fire directly off the user's own click (see §8).
 let certificateCanvas = null;
@@ -1167,6 +1180,7 @@ function resetGame() {
     challengeIconProgress = 0;
     specialWasReady = false;
     hasEarnedVictory = false;
+    blossomBlastActive = false;
 
     stopAllTimers();
 
@@ -1271,7 +1285,7 @@ function updateManaHud() {
     if (fill) fill.style.height = `${manaEnergy}%`;
     if (track) track.setAttribute('aria-valuenow', Math.round(manaEnergy));
     if (btn) {
-        const blossomPending = currentCharacter === 'sakura' && countActiveDetonators() > 0;
+        const blossomPending = currentCharacter === 'sakura' && blossomBlastActive;
         const ready = manaEnergy >= 100 && !blossomPending;
         btn.disabled = !ready;
         btn.classList.toggle('special-ready', ready);
@@ -2893,6 +2907,10 @@ function specialBlossomBreeze() {
     }
 
     best.forEach(([r, c]) => { boardState[r][c].detonator = true; });
+    // Marks a real activation as in progress — see this flag's own comment
+    // for why updateBlossomBlastNotice() needs it and can't just infer
+    // "in progress" from the detonator count alone.
+    blossomBlastActive = true;
     renderBoard();
     showBonusPopup(t('popup.blossomBlast'), CHARACTER_THEMES.sakura.baseColor);
     updateBlossomBlastNotice();
@@ -2924,15 +2942,23 @@ function countActiveDetonators() {
  * Keeps Sakura's Blossom Blast state in sync with the live board — call
  * this after anything that could have changed how many `.detonator` tiles
  * remain (placing them, the player detonating one, or a normal match
- * cascade sweeping one up same as any other icon). Deliberately doesn't
- * track a separate pending-count variable: a live scan of boardState can't
- * drift out of sync the way a manually incremented/decremented counter
- * could if some future tile-clearing path forgets to update it — see the
- * call site inside processMatchCycles() for the specific case (a normal
- * match) this was written to catch.
+ * cascade sweeping one up same as any other icon). No-ops unless
+ * `blossomBlastActive` is true — this runs on every cascade step (it has
+ * to, to catch a detonator getting swept into a normal match — see the
+ * call site inside processMatchCycles()), and most of those steps have
+ * nothing to do with Blossom Blast at all. Without that guard, this would
+ * see "0 detonators" for perfectly ordinary reasons — mana simply hasn't
+ * been spent yet this run — and immediately reset a freshly-filled,
+ * never-yet-claimed mana bar straight back to 0, which is exactly what
+ * "fills then drops back down without the icons ever appearing" was.
+ *
+ * The live scan (countActiveDetonators()) is still what actually decides
+ * *when* to clear the flag — it can't drift out of sync the way a
+ * manually incremented/decremented counter could if some future
+ * tile-clearing path forgot to update it.
  */
 function updateBlossomBlastNotice() {
-    if (currentCharacter !== 'sakura') return;
+    if (currentCharacter !== 'sakura' || !blossomBlastActive) return;
     const remaining = countActiveDetonators();
     if (remaining > 0) {
         showPortraitSpeechBubble(t('portraitNotice.blossomBlastPending', { count: remaining }));
@@ -2944,6 +2970,7 @@ function updateBlossomBlastNotice() {
         updateManaHud();
         return;
     }
+    blossomBlastActive = false;
     hidePortraitSpeechBubble();
     if (manaEnergy >= 100) {
         // Held full since activation specifically so a second click
