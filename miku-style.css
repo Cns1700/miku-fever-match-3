@@ -69,6 +69,36 @@ body::before {
 }
 
 /* ============================================================================
+   CHARACTER BACKGROUND PHOTO (crossfading pair)
+   ============================================================================
+   Two stacked layers rather than one — CSS can't transition a
+   background-image url() change, only properties like opacity, so
+   setAmbientTheme() loads the next photo into whichever layer is currently
+   hidden, then fades it in while the other fades out. Sits behind
+   body::before's color wash (z-index -1 vs its 0) so the wash still tints
+   it, and well behind the particle field/actual content. Dimmed and
+   desaturated a little rather than shown at full brightness/saturation —
+   this game's whole palette is built around a near-black base (--dark-bg)
+   with bright accents doing the work; a bright, busy photo at full
+   strength behind the existing light-on-dark UI text would fight that
+   rather than sit behind it. */
+.bg-image-layer {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background-size: cover;
+    background-position: center;
+    opacity: 0;
+    filter: brightness(0.4) saturate(1.05);
+    transition: opacity 2.5s ease;
+    pointer-events: none;
+}
+
+.bg-image-layer.active {
+    opacity: 1;
+}
+
+/* ============================================================================
    AMBIENT PARTICLE FIELD
    ============================================================================ */
 .particle-field {

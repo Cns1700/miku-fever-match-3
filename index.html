@@ -18,6 +18,14 @@
 </head>
 <body class="app-body">
 
+    <!-- Character background photo, crossfading between two stacked layers
+         — see setAmbientTheme() in miku-logic.js. Cycles through every
+         character on the roster screen, locks to one on selection. Behind
+         body::before's color wash and the particle field, purely
+         decorative. -->
+    <div id="bgImageLayerA" class="bg-image-layer" aria-hidden="true"></div>
+    <div id="bgImageLayerB" class="bg-image-layer" aria-hidden="true"></div>
+
     <!-- Ambient drifting-icon particle backdrop; purely decorative -->
     <div id="particleField" class="particle-field" aria-hidden="true"></div>
 
@@ -533,24 +541,21 @@
             </ul>
         </details>
         <!-- Third credits list: per-character swap/match/no-match/special sound
-             effects added in the 7/18 revision. Mixkit files used elsewhere in
-             this project don't require attribution under their license, so
-             only the Pixabay-sourced files are listed here. -->
+             effects added in the 7/18 revision, since revised down to just
+             the specialReady/specialExecuted sounds still actually played
+             per character (see CHARACTER_SFX's own comment in
+             miku-logic.js) — this list is scoped to just those. Mixkit
+             files used elsewhere in this project don't require attribution
+             under their license, so only the Pixabay-sourced ones need
+             listing here. -->
         <details class="credits-disclosure">
             <summary data-i18n="footer.audioCredits">Audio Credits</summary>
             <ul class="credits-list">
-                <li><a href="https://pixabay.com/users/benkirb-8692052/" target="_blank" rel="noopener">Sound Effect by Benjamin Adams &ndash; Pixabay</a></li>
                 <li><a href="https://pixabay.com/users/magiaz-10236927/" target="_blank" rel="noopener">Sound Effect by Mauricio P&oacute;voa &ndash; Pixabay</a></li>
                 <li><a href="https://pixabay.com/users/universfield-28281460/" target="_blank" rel="noopener">Sound Effect by Universfield &ndash; Pixabay</a></li>
-                <li><a href="https://pixabay.com/users/rescopicsound-45188866/" target="_blank" rel="noopener">Sound Effect by Rescopic Sound &ndash; Pixabay</a></li>
-                <li><a href="https://pixabay.com/users/bryansantosbreton-40689938/" target="_blank" rel="noopener">Sound Effect by Bryan Jesus De Los Santos Breton &ndash; Pixabay</a></li>
-                <li><a href="https://pixabay.com/users/tanweraman-29554143/" target="_blank" rel="noopener">Sound Effect by Aman Kumar &ndash; Pixabay</a></li>
                 <li><a href="https://pixabay.com/users/spinopel-46570060/" target="_blank" rel="noopener">Sound Effect by Spin Opel &ndash; Pixabay</a></li>
                 <li><a href="https://pixabay.com/users/dragon-studio-38165424/" target="_blank" rel="noopener">Sound Effect by DRAGON-STUDIO &ndash; Pixabay</a></li>
                 <li><a href="https://pixabay.com/users/freesound_community-46691455/" target="_blank" rel="noopener">Sound Effect by freesound_community &ndash; Pixabay</a></li>
-                <li><a href="https://pixabay.com/users/u_dn8ylcpe3v-48502954/" target="_blank" rel="noopener">Sound Effect by u_dn8ylcpe3v &ndash; Pixabay</a></li>
-                <li><a href="https://pixabay.com/users/mightuser-46744766/" target="_blank" rel="noopener">Sound Effect by Rahul &ndash; Pixabay</a></li>
-                <li><a href="https://pixabay.com/users/u_mgq59j5ayf-50948372/" target="_blank" rel="noopener">Sound Effect by u_mgq59j5ayf &ndash; Pixabay</a></li>
             </ul>
         </details>
         <!-- Fourth credits list: results-certificate background photos/vectors. -->
@@ -563,6 +568,21 @@
                 <li><a href="https://www.magnific.com/free-photo/snowflakes-colorful-lights_970845.htm" target="_blank" rel="noopener">Snowflakes colorful lights &ndash; Magnific</a></li>
                 <li><a href="https://unsplash.com/photos/time-lapse-of-cars-on-night-time-iZp4h1gXiEQ" target="_blank" rel="noopener">Time lapse of cars at night photo by Sanjeevan SatheesKumar &ndash; Unsplash</a></li>
                 <li><a href="https://unsplash.com/photos/a-planet-with-a-glowing-ring-in-deep-space-fKEywuUJNCQ" target="_blank" rel="noopener">Planet with a glowing ring in deep space photo by majed swan &ndash; Unsplash</a></li>
+            </ul>
+        </details>
+        <!-- Fifth credits list: the roster/mode-select/gameplay backdrop
+             photos (background/*.jpg) — separate from the results-
+             certificate backgrounds above, which are a different asset set
+             entirely (v-j-rs/ + cert-assets.js). -->
+        <details class="credits-disclosure">
+            <summary data-i18n="footer.characterBackgroundCredits">Character Background Credits</summary>
+            <ul class="credits-list">
+                <li><a href="https://www.magnific.com/free-photo/futuristic-science-fiction-tunnel-corridor-with-lines-neon-blue-red-lights_11942639.htm" target="_blank" rel="noopener">Futuristic science fiction tunnel corridor with neon lights &ndash; Magnific</a></li>
+                <li><a href="https://www.magnific.com/free-vector/japanese-cherry-garden-sakura-blossom-night-park_38654922.htm" target="_blank" rel="noopener">Japanese cherry garden, sakura blossom night park &ndash; Magnific</a></li>
+                <li><a href="https://www.magnific.com/free-vector/full-moon-night-sky-with-stars-clouds-scene_5901298.htm" target="_blank" rel="noopener">Full moon night sky with stars and clouds &ndash; Magnific</a></li>
+                <li><a href="https://www.magnific.com/free-vector/watercolor-background-wintertime-season_82654263.htm" target="_blank" rel="noopener">Watercolor background, wintertime season &ndash; Magnific</a></li>
+                <li><a href="https://www.magnific.com/free-vector/transport-interchange-road-night-neon-city-top-view_6610139.htm" target="_blank" rel="noopener">Transport interchange road at night, neon city top view &ndash; Magnific</a></li>
+                <li><a href="https://www.magnific.com/free-vector/gradient-galaxy-background_72132664.htm" target="_blank" rel="noopener">Gradient galaxy background &ndash; Magnific</a></li>
             </ul>
         </details>
         </div>

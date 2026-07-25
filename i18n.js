@@ -270,7 +270,8 @@ const I18N = {
             assetCredits: "Asset Credits",
             iconCredits: "Move & Time Icon Credits",
             audioCredits: "Audio Credits",
-            backgroundCredits: "Certificate Background Credits"
+            backgroundCredits: "Certificate Background Credits",
+            characterBackgroundCredits: "Character Background Credits"
         },
         certificate: {
             modeLabels: {
@@ -513,7 +514,8 @@ const I18N = {
             assetCredits: "アセット・クレジット",
             iconCredits: "手数／時間アイコン・クレジット",
             audioCredits: "音声クレジット",
-            backgroundCredits: "証明書背景クレジット"
+            backgroundCredits: "証明書背景クレジット",
+            characterBackgroundCredits: "キャラクター背景クレジット"
         },
         certificate: {
             modeLabels: {

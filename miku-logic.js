@@ -425,6 +425,11 @@ const CHARACTER_THEMES = {
         baseColor: "#39C5BB",       // <- change this hex to re-theme Classic Miku everywhere
         accentColor: "#E23E57",
         obstacleName: "Static-Locked",
+        // Ambient page background — see setAmbientTheme()/the .bg-image-layer
+        // pair in index.html. Roster screen crossfades through every
+        // character's; selectCharacter() locks it to this one for the rest
+        // of the session (mode-select + game screens included).
+        bgImage: "background/classic-bg.jpg",
         hudEmoji: "🎤",
         certEmoji: ["🎤", "🎤"],
         boardIcons: [
@@ -471,6 +476,7 @@ const CHARACTER_THEMES = {
         // fallback in buildCertificateCanvas()/drawCertificateFallbackBase()).
         certBorderColor: "#9c1c48",
         obstacleName: "Wilted Petal",
+        bgImage: "background/sakura-bg.jpg",
         hudEmoji: "🌸",
         certEmoji: ["🌸", "🌸"],
         boardIcons: [
@@ -496,6 +502,7 @@ const CHARACTER_THEMES = {
         baseColor: "#8D8BB2",
         accentColor: "#BA3C56",
         obstacleName: "Glitch",
+        bgImage: "background/nightcord-bg.jpg",
         hudEmoji: "🌙",
         certEmoji: ["🌙", "🌙"],
         boardIcons: [
@@ -522,6 +529,7 @@ const CHARACTER_THEMES = {
         baseColor: "#7DD3FC",
         accentColor: "#E0F2FE",
         obstacleName: "Ice",
+        bgImage: "background/snow-bg.jpg",
         hudEmoji: "❄️",
         certEmoji: ["❄️", "❄️"],
         boardIcons: [
@@ -547,6 +555,7 @@ const CHARACTER_THEMES = {
         baseColor: "#F97316",
         accentColor: "#10B981",
         obstacleName: "Oil-Slick",
+        bgImage: "background/racing-bg.jpg",
         hudEmoji: "🏁",
         certEmoji: ["🏆", "🏆"],
         boardIcons: [
@@ -572,6 +581,7 @@ const CHARACTER_THEMES = {
         baseColor: "#D946EF",
         accentColor: "#EAB308",
         obstacleName: "Asteroid",
+        bgImage: "background/space-bg.jpg",
         hudEmoji: "☄️",
         certEmoji: ["☄️", "☄️"],
         boardIcons: [
@@ -639,13 +649,20 @@ const CERTIFICATE_PORTRAIT_IMAGES = {
  * ============================================================================
  * 4. AMBIENT PARTICLE FIELD & COLOR-CYCLING BACKGROUND
  * ============================================================================
- * A fixed layer of small drifting icon particles behind the app. On the
- * roster screen it auto-cycles through every character's palette + icon set;
- * once a character is chosen it locks onto that character for the rest of
- * the session.
+ * A fixed layer of small drifting icon particles, a color wash, and (as of
+ * the background/ art) a crossfading photo, all behind the app. On the
+ * roster screen it auto-cycles through every character's palette/icons/
+ * photo; once a character is chosen it locks onto that character — photo
+ * included — for the rest of the session (mode-select and gameplay too,
+ * since this is a fixed page-level layer, not scoped to any one screen).
  */
 const AMBIENT_ORDER = ['classic', 'sakura', 'nightcord', 'snow', 'racing', 'space'];
 const PARTICLE_COUNT = 22;
+// Which of the two crossfade layers (see .bg-image-layer in miku-style.css)
+// currently holds the active/visible background — setAmbientTheme() flips
+// this each call so the NEXT photo always loads into the currently-hidden
+// layer before fading it in.
+let activeBgLayer = 'A';
 
 /** Creates the drifting particle `<img>` elements once at page load. */
 function initParticleField() {
@@ -673,13 +690,31 @@ function initParticleField() {
     setAmbientTheme(AMBIENT_ORDER[0]);
 }
 
-/** Re-points every particle at a character's icons and updates the ambient color wash. */
+/** Re-points every particle at a character's icons, updates the ambient color wash, and crossfades in that character's background photo. */
 function setAmbientTheme(key) {
     const config = CHARACTER_THEMES[key];
     if (!config) return;
 
     document.documentElement.style.setProperty('--ambient-color', config.baseColor);
     document.documentElement.style.setProperty('--ambient-color-soft', hexToRgba(config.baseColor, 0.18));
+
+    if (config.bgImage) {
+        const nextLayer = document.getElementById(activeBgLayer === 'A' ? 'bgImageLayerB' : 'bgImageLayerA');
+        const currentLayer = document.getElementById(activeBgLayer === 'A' ? 'bgImageLayerA' : 'bgImageLayerB');
+        if (nextLayer) {
+            // No rAF needed here, unlike animateBoardDrop()'s double-rAF:
+            // these two layers are static elements already resting at their
+            // base opacity:0 well before this ever runs (not freshly
+            // created mid-function the way renderBoard()'s cells are), so
+            // there's no "just-set synthetic starting state" that needs a
+            // frame to commit first — toggling .active directly triggers
+            // the CSS transition already declared on the base rule.
+            nextLayer.style.backgroundImage = `url('${config.bgImage}')`;
+            nextLayer.classList.add('active');
+            if (currentLayer) currentLayer.classList.remove('active');
+            activeBgLayer = activeBgLayer === 'A' ? 'B' : 'A';
+        }
+    }
 
     const field = document.getElementById('particleField');
     if (!field) return;
