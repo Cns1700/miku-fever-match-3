@@ -4,32 +4,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Miku Match-3: Hatsune Fever</title>
-    <!-- FontAwesome for cute icons and symbols -->
+    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Fonts for custom typography -->
+    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <!-- Quicksand/Rajdhani/Audiowide added for the results certificate's
-         per-character typography (see CERT_TYPOGRAPHY in miku-logic.js) —
-         Fredoka/Orbitron/Share Tech Mono were already in use elsewhere. -->
+    
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&family=Orbitron:wght@400..900&family=Share+Tech+Mono&family=Quicksand:wght@300..700&family=Rajdhani:wght@300;400;500;600;700&family=Audiowide&display=swap" rel="stylesheet">
-    <!-- Consolidated External Stylesheet -->
+    
     <link rel="stylesheet" href="miku-style.css">
 </head>
 <body class="app-body">
 
-    <!-- Character background photo, crossfading between two stacked layers
-         — see setAmbientTheme() in miku-logic.js. Cycles through every
-         character on the roster screen, locks to one on selection. Behind
-         body::before's color wash and the particle field, purely
-         decorative. -->
     <div id="bgImageLayerA" class="bg-image-layer" aria-hidden="true"></div>
     <div id="bgImageLayerB" class="bg-image-layer" aria-hidden="true"></div>
 
-    <!-- Ambient drifting-icon particle backdrop; purely decorative -->
     <div id="particleField" class="particle-field" aria-hidden="true"></div>
 
-    <!-- HEADER & AUDIO CONTROL BAR -->
     <header class="app-header">
         <button id="soundToggleBtn" type="button" data-i18n="header.soundToggleLabel" data-i18n-attr="aria-label" aria-label="Toggle Synthesizer Sound" class="sound-toggle-btn">
             <i id="soundIcon" class="fas fa-volume-up icon-active" aria-hidden="true"></i>
@@ -38,13 +29,10 @@
         <button id="langToggleBtn" type="button" class="lang-toggle-btn" data-i18n="header.langToggleLabel" data-i18n-attr="aria-label" aria-label="Switch language">EN</button>
     </header>
 
-    <!-- MAIN APP VIEWPORTS -->
     <main id="appContainer" class="main-container">
 
-        <!-- SCREEN 1: CHARACTER SELECTION ROSTER -->
         <section id="selectionScreen" class="selection-screen">
-            <!-- EDIT HERE: the badge/title/description text below is plain
-                 copy — change it directly, no script changes needed. -->
+            
             <header class="selection-header">
                 <span class="project-badge" data-i18n="roster.badge">Vocaloid Match-3 Project</span>
                 <h1 class="main-title"><span data-i18n="roster.titleLine1">MIKU</span> <span class="highlight-cyan" data-i18n="roster.titleLine2">FEVER</span></h1>
@@ -53,10 +41,8 @@
                 </p>
             </header>
 
-            <!-- Character Choices Grid -->
             <div class="character-grid">
 
-                <!-- CARD 1: CLASSIC MIKU -->
                 <div data-char="classic" class="character-card classic-card" role="button" tabindex="0">
                     <div class="card-gradient"></div>
                     <article class="card-content">
@@ -73,7 +59,6 @@
                     <span class="card-cta text-classic" data-i18n="character.classic.cta">Play Classic &rarr;</span>
                 </div>
 
-                <!-- CARD 2: SAKURA MIKU -->
                 <div data-char="sakura" class="character-card sakura-card" role="button" tabindex="0">
                     <div class="card-gradient"></div>
                     <article class="card-content">
@@ -90,7 +75,6 @@
                     <span class="card-cta text-sakura" data-i18n="character.sakura.cta">Play Sakura &rarr;</span>
                 </div>
 
-                <!-- CARD 3: NIGHTCORD 25-JI MIKU -->
                 <div data-char="nightcord" class="character-card nightcord-card" role="button" tabindex="0">
                     <div class="card-gradient"></div>
                     <article class="card-content">
@@ -107,7 +91,6 @@
                     <span class="card-cta text-nightcord" data-i18n="character.nightcord.cta">Play 25-ji &rarr;</span>
                 </div>
 
-                <!-- CARD 4: SNOW MIKU -->
                 <div data-char="snow" class="character-card snow-card" role="button" tabindex="0">
                     <div class="card-gradient"></div>
                     <article class="card-content">
@@ -124,7 +107,6 @@
                     <span class="card-cta text-snow" data-i18n="character.snow.cta">Play Snow &rarr;</span>
                 </div>
 
-                <!-- CARD 5: RACING MIKU -->
                 <div data-char="racing" class="character-card racing-card" role="button" tabindex="0">
                     <div class="card-gradient"></div>
                     <article class="card-content">
@@ -141,7 +123,6 @@
                     <span class="card-cta text-racing" data-i18n="character.racing.cta">Play Racing &rarr;</span>
                 </div>
 
-                <!-- CARD 6: SPACE SINGER MIKU -->
                 <div data-char="space" class="character-card space-card" role="button" tabindex="0">
                     <div class="card-gradient"></div>
                     <article class="card-content">
@@ -161,7 +142,6 @@
             </div>
         </section>
 
-        <!-- SCREEN 1.5: GAME MODE SELECTION -->
         <section id="modeSelectScreen" class="selection-screen hidden">
             <header class="selection-header">
                 <button id="backToRosterFromModeBtn" type="button" class="btn-utility flex-center gap-1">
@@ -173,7 +153,6 @@
 
             <div class="character-grid mode-grid">
 
-                <!-- MODE 1: STAGE CLEAR -->
                 <div data-mode="stageClear" class="character-card mode-card stage-clear-card" role="button" tabindex="0">
                     <div class="card-gradient"></div>
                     <article class="card-content">
@@ -189,7 +168,6 @@
                     <span class="card-cta" data-i18n="mode.stageClear.cta">Play Stage Clear &rarr;</span>
                 </div>
 
-                <!-- MODE 2: LIVE PERFORMANCE -->
                 <div data-mode="livePerformance" class="character-card mode-card live-performance-card" role="button" tabindex="0">
                     <div class="card-gradient"></div>
                     <article class="card-content">
@@ -205,7 +183,6 @@
                     <span class="card-cta" data-i18n="mode.livePerformance.cta">Play Live Performance &rarr;</span>
                 </div>
 
-                <!-- MODE 3: LEISURE MODE (internal data-mode/key stays "leisure") -->
                 <div data-mode="leisure" class="character-card mode-card leisure-card" role="button" tabindex="0">
                     <div class="card-gradient"></div>
                     <article class="card-content">
@@ -224,17 +201,13 @@
             </div>
         </section>
 
-        <!-- SCREEN 2: ACTIVE GAMEPLAY GRID -->
         <section id="gameScreen" class="game-screen hidden">
 
-            <!-- PORTRAIT SIDEBAR PANEL -->
             <aside id="portraitPanel" class="portrait-panel">
 
-                <!-- Dynamic background design decorative ambient glowing blobs -->
                 <div class="ambient-blob top-left-blob" id="portraitThemeBlob1" aria-hidden="true"></div>
                 <div class="ambient-blob bottom-right-blob" id="portraitThemeBlob2" aria-hidden="true"></div>
 
-                <!-- Navigation & Title HUD -->
                 <div class="panel-header">
                     <button id="backToMenuBtn" type="button" class="btn-utility flex-center gap-1">
                         <i class="fas fa-chevron-left text-xxs" aria-hidden="true"></i> <span data-i18n="nav.roster">Roster</span>
@@ -242,25 +215,9 @@
                     <span id="charTitleLabel" class="character-hud-badge">Classic Miku</span>
                 </div>
 
-                <!-- DYNAMIC PORTRAIT BLOCK + VERTICAL MANA BAR
-                     Portrait framing (position + zoom) is code-only now —
-                     no player-facing controls. #mikuPortraitImg is a plain
-                     div painted via CSS background-image; its position/size
-                     are set from each character's `sidebarPortraitFrame` in
-                     CHARACTER_THEMES (miku-logic.js, applyPortraitFraming(),
-                     called from selectCharacter()) — fully independent from
-                     the roster cards' `cardPortraitFrame`/
-                     applyCardPortraitFraming(). See the "PORTRAIT FRAMING"
-                     banner in miku-logic.js to retune a character's
-                     crop/zoom on either surface. -->
                 <div class="portrait-mana-row">
                     <div class="portrait-column">
-                        <!-- Persistent notice bubble, e.g. Blossom Blast's
-                             pending-detonator count — see
-                             showPortraitSpeechBubble() in miku-logic.js.
-                             Positioned/shown in CSS only when un-hidden, so
-                             it doesn't reserve layout space the rest of the
-                             time. -->
+                        
                         <div id="portraitSpeechBubble" class="speech-bubble hidden" role="status" aria-live="polite">
                             <span id="portraitSpeechBubbleText"></span>
                         </div>
@@ -273,9 +230,6 @@
                         </figure>
                     </div>
 
-                    <!-- Mana bar: fills bottom-to-top as the player matches this
-                         run's "charge icon" (shown below it) or clears themed
-                         tiles. At 100% the Special button lights up. -->
                     <div class="mana-bar-wrapper">
                         <div class="mana-bar-track" role="meter" aria-label="Special ability energy" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
                             <div id="manaBarFill" class="mana-bar-fill"></div>
@@ -287,10 +241,8 @@
                     </div>
                 </div>
 
-                <!-- LIVE SCORE AND STATISTICS CARD -->
                 <div class="stats-panel-container">
 
-                    <!-- Scoring stats -->
                     <div class="stats-card-block flex-between">
                         <div>
                             <span class="stat-meta-label" data-i18n="hud.totalScore">Total Score</span>
@@ -302,11 +254,6 @@
                         </div>
                     </div>
 
-                    <!-- Fever Energy Tracker: feverLevel (see miku-logic.js, section 7)
-                         still drives the bonus-round/milestone cadence and the
-                         per-level score popups — it's just no longer shown as a
-                         standing "Lv.X" badge here, since the raw count didn't
-                         mean anything to a player looking at it mid-run. -->
                     <div class="fever-hud-block">
                         <div class="flex-between font-semibold text-xs">
                             <span class="fever-label flex-center gap-1">
@@ -319,7 +266,6 @@
                         </div>
                     </div>
 
-                    <!-- Level and Combos Grid -->
                     <div class="hud-metrics-grid">
                         <div class="metric-block text-center hud-stage-only">
                             <span class="stat-meta-label" data-i18n="hud.stageLevel">Stage Level</span>
@@ -337,10 +283,8 @@
                 </p>
             </aside>
 
-            <!-- PLAYGRID CONTROLS & BOARD CONTAINER -->
             <div class="board-view-wrapper flex-col">
 
-                <!-- HUD controls -->
                 <div class="board-top-hud flex-between">
                     <div class="hud-left-group flex-center gap-4">
                         <span id="movesLabel" class="moves-label font-bold flex-center hud-stage-only">
@@ -366,30 +310,17 @@
                     </div>
                 </div>
 
-                <!-- Compact banner for the active timed challenge (themed-tile
-                     clear in Stage Clear, icon-match in Live Performance).
-                     Hidden whenever no challenge is running. -->
                 <div id="challengeBanner" class="challenge-banner hidden"></div>
 
-                <!-- MAIN MATCH-3 BOARD. Wrapped in .board-frame (rather than living
-                     directly in .board-view-wrapper) purely so #specialTimerBadge
-                     below has a position:relative ancestor sized to the board that
-                     ISN'T also overflow:hidden like #boardBorder itself is — the
-                     badge needs to sit OUTSIDE the board's frame, so it can't be a
-                     child of the element that clips everything to the board's
-                     rounded corners. -->
                 <div class="board-frame">
                 <div class="board-container" id="boardBorder">
 
-                    <!-- Grid system layout -->
                     <div id="match3Grid" class="board-grid-wrapper" role="grid" aria-label="Match-3 game board">
-                        <!-- Dynamic matrix generated programmatically -->
+                        
                     </div>
 
-                    <!-- Live Performance only: dims the board and blocks input while paused -->
                     <div id="pauseOverlay" class="pause-overlay hidden" aria-live="polite" data-i18n="pause.paused">PAUSED</div>
 
-                    <!-- How-To-Play: shown automatically when a mode starts, reopenable via the 📋 button -->
                     <div id="howToPlayOverlay" class="how-to-play-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="howToPlayHeading">
                         <div class="overlay-modal-block">
                             <h2 id="howToPlayHeading" class="cyber-font heading-modal" data-i18n="howToPlay.heading">How To Play</h2>
@@ -398,13 +329,6 @@
                         </div>
                     </div>
 
-                    <!-- Stage Clear only: shown once when `level` first reaches
-                         STAGE_CLEAR_VICTORY_LEVEL (see checkLevelProgress() in
-                         miku-logic.js). Reuses .results-overlay's styling as-is
-                         — same visual treatment, no new CSS needed. Blocks board
-                         input the same way Results does: isProcessing stays true
-                         for as long as this is open (see checkLevelProgress()'s
-                         comment for why that alone is enough). -->
                     <div id="stageVictoryChoiceOverlay" class="results-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="stageVictoryChoiceHeading">
                         <div class="overlay-modal-block">
                             <h2 id="stageVictoryChoiceHeading" class="cyber-font heading-modal" data-i18n="stageVictoryChoice.heading">Stage 50 Clear — Victory!</h2>
@@ -416,7 +340,6 @@
                         </div>
                     </div>
 
-                    <!-- OVERLAY MODAL: WIN / LOSS STAGES -->
                     <div id="resultsOverlay" class="results-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="resultsHeading">
                         <div class="overlay-modal-block">
                             <span id="victoryBadge" class="victory-banner-badge">Stage Clear!</span>
@@ -433,13 +356,6 @@
                                 <button id="overlayBackToRosterBtn" type="button" class="btn-utility font-semibold" data-i18n="results.backToRoster">Back to Roster</button>
                             </div>
 
-                            <!-- Shareable results certificate: rendered on-the-fly onto a
-                                 canvas in miku-logic.js (buildCertificateCanvas), no image is
-                                 kept in the DOM until the player asks to download/copy it.
-                                 To change the CHARACTER IMAGE drawn onto the certificate,
-                                 edit CERTIFICATE_PORTRAIT_IMAGES in miku-logic.js (search
-                                 that file for "EDIT HERE to change the image used on the
-                                 downloadable/copyable results CERTIFICATE"). -->
                             <div class="overlay-button-group flex-center gap-3">
                                 <button id="downloadCertificateBtn" type="button" class="btn-utility font-semibold" data-i18n="results.downloadCertificate">Download Certificate</button>
                                 <button id="copyCertificateBtn" type="button" class="btn-utility font-semibold" data-i18n="results.copyToClipboard">Copy to Clipboard</button>
@@ -448,27 +364,15 @@
                     </div>
                 </div>
 
-                <!-- Countdown badge for the two timed character-buff specials —
-                     Miku's Harmony Wave and Space Singer's Cosmic Gravity (both
-                     15s). A sibling of #boardBorder (not a child — see the
-                     .board-frame comment above) so it can sit outside the board's
-                     top-right corner instead of being clipped to it. Hidden the
-                     rest of the time; shown/driven by startSpecialTimerBadge()/
-                     stopSpecialTimerBadge() in miku-logic.js, which fill in the
-                     emoji + seconds below. -->
                 <div id="specialTimerBadge" class="special-timer-badge hidden" role="timer" aria-label="Special ability time remaining">
                     <span id="specialTimerEmoji" class="special-timer-emoji" aria-hidden="true">🎤</span>
                     <output id="specialTimerValue" class="special-timer-value">15</output>
                 </div>
                 </div>
 
-                <!-- Leisure mode swaps this row to a single centered message
-                     instead of the two gameplay tips, which don't really
-                     apply to a no-stakes mode — see applyModeVisibility()
-                     in miku-logic.js. -->
                 <div id="boardFooterTips" class="board-footer-tips flex-between text-xs">
                     <span id="footerTip1" data-i18n="hud.footerTip1">Fever milestones &amp; timed challenges grant bonus moves/time!</span>
-                    <span id="footerTip2" data-i18n="hud.footerTip2">No moves? We'll auto-reshuffle!</span>
+                    <span id="footerTip2" data-i18n="hud.footerTip2">Chain matches for bigger scores!</span>
                     <span id="footerTipLeisure" class="hidden" data-i18n="hud.footerTipLeisure">Just relax and enjoy the cascades ✨</span>
                 </div>
             </div>
@@ -477,9 +381,6 @@
 
     </main>
 
-    <!-- FOOTER LICENSE BAR -->
-    <!-- EDIT HERE: copyright line and footer link text are plain copy below.
-         Footer text color itself lives in miku-style.css (.footer-layout). -->
     <footer class="app-footer">
         <div class="footer-layout flex-between text-xs">
             <span data-i18n="footer.copyright">&copy; 2026 Miku Fever Match-3. Free Non-Commercial Fanmade Project.</span>
@@ -489,9 +390,7 @@
                 <span data-i18n="footer.webAudioSynth">Web Audio API Synthesizer</span>
             </div>
         </div>
-        <!-- Row wrapper: lays the 4 dropdown headers below out side-by-side
-             instead of stacked. Only affects this row's own layout — each
-             dropdown's expanded list (.credits-list) is untouched. -->
+        
         <div class="credits-row">
         <details class="credits-disclosure">
             <summary data-i18n="footer.assetCredits">Asset Credits</summary>
@@ -522,7 +421,7 @@
                 <li><a href="https://craftpix.net/freebies/free-cyberpunk-energy-items-512x512-icon-pack/" target="_blank" rel="noopener">Free Cyberpunk Energy Items 512x512 Icon Pack &ndash; CraftPix</a></li>
             </ul>
         </details>
-        <!-- Second credits list: the move-icon / time-icon bonus tiles added in the 7/14 revision -->
+        
         <details class="credits-disclosure">
             <summary data-i18n="footer.iconCredits">Move &amp; Time Icon Credits</summary>
             <ul class="credits-list">
@@ -540,14 +439,7 @@
                 <li><a href="https://www.flaticon.com/free-icons/winter" title="winter icons" target="_blank" rel="noopener">Winter icons created by AbtoCreative &ndash; Flaticon</a></li>
             </ul>
         </details>
-        <!-- Third credits list: per-character swap/match/no-match/special sound
-             effects added in the 7/18 revision, since revised down to just
-             the specialReady/specialExecuted sounds still actually played
-             per character (see CHARACTER_SFX's own comment in
-             miku-logic.js) — this list is scoped to just those. Mixkit
-             files used elsewhere in this project don't require attribution
-             under their license, so only the Pixabay-sourced ones need
-             listing here. -->
+        
         <details class="credits-disclosure">
             <summary data-i18n="footer.audioCredits">Audio Credits</summary>
             <ul class="credits-list">
@@ -558,7 +450,7 @@
                 <li><a href="https://pixabay.com/users/freesound_community-46691455/" target="_blank" rel="noopener">Sound Effect by freesound_community &ndash; Pixabay</a></li>
             </ul>
         </details>
-        <!-- Fourth credits list: results-certificate background photos/vectors. -->
+        
         <details class="credits-disclosure">
             <summary data-i18n="footer.backgroundCredits">Certificate Background Credits</summary>
             <ul class="credits-list">
@@ -570,10 +462,7 @@
                 <li><a href="https://unsplash.com/photos/a-planet-with-a-glowing-ring-in-deep-space-fKEywuUJNCQ" target="_blank" rel="noopener">Planet with a glowing ring in deep space photo by majed swan &ndash; Unsplash</a></li>
             </ul>
         </details>
-        <!-- Fifth credits list: the roster/mode-select/gameplay backdrop
-             photos (background/*.jpg) — separate from the results-
-             certificate backgrounds above, which are a different asset set
-             entirely (v-j-rs/ + cert-assets.js). -->
+        
         <details class="credits-disclosure">
             <summary data-i18n="footer.characterBackgroundCredits">Character Background Credits</summary>
             <ul class="credits-list">
@@ -588,20 +477,7 @@
         </div>
     </footer>
 
-    <!-- Language dictionary (English/Japanese) — must load before
-         miku-logic.js, which calls t()/applyTranslations() throughout.
-         `defer` lets this and miku-logic.js fetch in parallel instead of
-         strictly sequentially, while still guaranteeing this one finishes
-         executing first (defer preserves document order). -->
     <script src="i18n.js" defer></script>
-
-    <!-- Modular Game Script. cert-assets.js (~5MB of pre-encoded certificate
-         images) is intentionally NOT a static <script> tag here — it's only
-         needed once a run ends and the results screen builds a certificate,
-         so it's lazy-loaded on demand instead (see loadCertAssets() in this
-         file) rather than blocking every visitor's first interaction with
-         the roster/mode-select screens on a 5MB download they may never
-         even need. -->
     <script src="miku-logic.js" defer></script>
 </body>
 </html>

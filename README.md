@@ -18,10 +18,10 @@ Plays entirely in the browser, no install, no account, no ads. **[Available in E
 
 | | |
 |---|---|
-| ![Roster select screen](screenshots/roster.png) | ![Classic Miku mid-game](screenshots/gameplay.png) |
-| **キャラクター選択画面**<br>*(Character select screen)* | **クラシック・ミクでプレイ中**<br>*(Playing as Classic Miku)* |
-| ![Cosmic Gravity special active](screenshots/special.png) | ![Victory results screen](screenshots/victory.png) |
-| **コズミックグラビティ発動中**<br>*(Cosmic Gravity activating)* | **ステージクリア勝利画面**<br>*(Stage Clear victory screen)* |
+| ![Roster Select Screen](screenshots/roster.png) | ![25-ji Miku mid-game](screenshots/gameplay.png) |
+| **キャラクター選択画面**<br>*(Character select screen)* | **ニーゴミクでプレイ中**<br>*(Playing as 25-ji Miku)* |
+| ![Cosmic Gravity Special Active](screenshots/special.png) | ![Victory results screen](screenshots/victory.png) |
+| **コズミックグラビティ発動中**<br>*(Cosmic Gravity Activating)* | **勝利画面**<br>*(Victory Screen)* |
 
 ## Features
 
@@ -57,8 +57,8 @@ Free, non-commercial fanmade project. Hatsune Miku and all Vocaloid characters/l
 
 ## Find this project
 
-- itch.io: *(link here once published)*
-- Pixiv: *(link here once published)*
+- itch.io：https://mizuchisylph.itch.io/miku-fever
+- Pixiv：https://www.pixiv.net/en/artworks/147655266
 
 ---
 

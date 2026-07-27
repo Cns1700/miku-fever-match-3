@@ -1,14 +1,7 @@
-/**
- * ============================================================================
- * 1. SYNTHESIZER SOUND ENGINE
- * ============================================================================
- * Everything the game plays is a synthesized tone (Web Audio oscillators) —
- * there are no external audio files here. Each `play___()` helper below is
- * just a short recipe of frequency/waveform/duration calls into `playTone()`.
- * Real recorded sound effects (game-audio/ for shared events, sfx/*-sfx/ for
- * per-character ones) are handled separately by the `SFX` object further
- * down and layered on top of these, not replacing.
- */
+/* ──────────────────────────────────────────────
+   1. SYNTHESIZER + REAL SFX
+   ────────────────────────────────────────────── */
+
 const AudioSynth = {
     ctx: null,
     muted: false,
@@ -18,22 +11,19 @@ const AudioSynth = {
         try {
             this.ctx = new (window.AudioContext || window.webkitAudioContext)();
         } catch (e) {
-            console.warn("Audio Context failed to initialize: ", e);
+            console.warn('Audio Context failed to initialize:', e);
         }
     },
 
-    /** Plays one oscillator note. `slideTo` (optional) glides the pitch over the note's duration. */
     playTone(freq, type, duration, slideTo = null) {
         if (this.muted) return;
         try {
             this.init();
             if (!this.ctx) return;
-            if (this.ctx.state === 'suspended') {
-                this.ctx.resume();
-            }
+            if (this.ctx.state === 'suspended') this.ctx.resume();
 
             const osc = this.ctx.createOscillator();
-            const gainNode = this.ctx.createGain();
+            const gain = this.ctx.createGain();
 
             osc.type = type;
             osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
@@ -41,16 +31,16 @@ const AudioSynth = {
                 osc.frequency.exponentialRampToValueAtTime(slideTo, this.ctx.currentTime + duration);
             }
 
-            gainNode.gain.setValueAtTime(0.12, this.ctx.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
+            gain.gain.setValueAtTime(0.12, this.ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
 
-            osc.connect(gainNode);
-            gainNode.connect(this.ctx.destination);
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
 
             osc.start();
             osc.stop(this.ctx.currentTime + duration);
         } catch (e) {
-            console.error("Synthesizer playback error", e);
+            console.error('Synthesizer playback error', e);
         }
     },
 
@@ -77,7 +67,6 @@ const AudioSynth = {
     playFeverTick() {
         this.playTone(987, 'sine', 0.04);
     },
-    /** Rising 3-note arpeggio played whenever any character's special ability fires. */
     playSpecial() {
         this.playTone(880, 'triangle', 0.12, 1760);
         setTimeout(() => this.playTone(660, 'sine', 0.18, 1320), 90);
@@ -85,35 +74,16 @@ const AudioSynth = {
     }
 };
 
-/**
- * ============================================================================
- * REAL AUDIO FILES (game-audio/) — SHARED EVENTS
- * ============================================================================
- * >>> EDIT HERE to swap which file plays for which event. Each entry preloads
- * once at startup; `SFX.play(name)` clones the element so overlapping
- * triggers (e.g. a fast cascade) don't cut each other's playback short.
- * Events that differ per character (swap/match/no-match/special-ready/
- * special-executed) live in CHARACTER_SFX below instead — this map is only
- * for sounds every character shares.
- */
 const SFX_FILES = {
-    // megaMatch/feverStart/challengeSuccess genuinely play the same for every
-    // character, so they stay on their original game-audio/ copies (also
-    // duplicated into every sfx/*-sfx/ folder for asset organization, but
-    // those extra copies aren't wired up here since there's no one "owning"
-    // character to pick between).
     megaMatch: 'game-audio/mixkit-break-tech-impact-2952.wav',
     feverStart: 'game-audio/mixkit-fairy-arcade-sparkle-866.wav',
     challengeSuccess: 'game-audio/mixkit-fantasy-game-success-notification-270.wav',
-    // Despite living in this "shared" map, this one is gated to nightcord
-    // only (see the `if (currentCharacter === 'nightcord')` check where it's
-    // played) and is the same file as nightcord's own swap sound below, so
-    // it gets a real per-character home in sfx/25-ji-sfx/ like the rest.
     themedTileClear25ji: 'sfx/25-ji-sfx/mixkit-digital-glitch-break-2951.wav'
 };
 
 const SFX = {
     pools: {},
+
     init() {
         Object.entries(SFX_FILES).forEach(([name, src]) => {
             try {
@@ -126,6 +96,7 @@ const SFX = {
             }
         });
     },
+
     play(name) {
         const base = this.pools[name];
         if (!base) return;
@@ -139,21 +110,6 @@ const SFX = {
     }
 };
 
-/**
- * ============================================================================
- * REAL AUDIO FILES (sfx/*-sfx/) — PER-CHARACTER EVENTS
- * ============================================================================
- * Five events per character: swapping two tiles, a successful match (fires
- * every cascade step, "plays during chains as well"), an invalid/no-match
- * swap attempt, the special move becoming ready (mana bar hits 100), and the
- * special move actually firing. Each entry is `{ src, start, end }` — `start`
- * skips leading dead air, `end` cuts the sound off before any trailing dead
- * air, both in seconds. Entries with no explicit `start`/`end` in the design
- * doc had their trailing silence measured once offline (ffmpeg
- * `silencedetect`, -50dB/0.25s) rather than guessed, so even "unspecified"
- * sounds stay tightly trimmed. >>> EDIT HERE to remap a character's sounds
- * or retune a trim point.
- */
 const CHARACTER_SFX = {
     classic: {
         swap: { src: 'sfx/miku-sfx/mixkit-futuristic-machine-glitch-2684.wav', start: 2.2, end: 3.45 },
@@ -167,9 +123,6 @@ const CHARACTER_SFX = {
         match: { src: 'sfx/sakura-sfx/magiaz-hotel-bell-334109.mp3', end: 2.83 },
         noMatch: { src: 'sfx/sakura-sfx/mixkit-glitch-roar-1033.wav', end: 0.5 },
         specialReady: { src: 'sfx/sakura-sfx/magiaz-hotel-bell-334109.mp3', end: 2.83 },
-        // Only ever triggered from the board-click detonation (see
-        // detonateBlossomTile()) — the button click that arms the special
-        // stays synth-only, see activateSpecial()'s sakura/racing exclusion.
         specialExecuted: { src: 'sfx/sakura-sfx/universfield-magic-spell-02-250240.mp3', end: 1.5 }
     },
     nightcord: {
@@ -191,11 +144,6 @@ const CHARACTER_SFX = {
         match: { src: 'sfx/racing-sfx/u_dn8ylcpe3v-f1_radio_sound-293747.mp3', start: 0.6, end: 0.99 },
         noMatch: { src: 'sfx/racing-sfx/mightuser-sound-of-breaks-squeaking-of-vehicle-hd-267282.mp3', start: 2.25 },
         specialReady: { src: 'sfx/racing-sfx/freesound_community-backfiring-vehicle-81982.mp3', end: 1.0 },
-        // Only ever triggered from the board-click placement (see
-        // resolveTurboBlitz()) — the button click that enters aim mode
-        // stays synth-only, see activateSpecial()'s sakura/racing exclusion.
-        // Trim measured via ffmpeg silencedetect (-50dB/0.25s): audible
-        // content ends ~1.13s into a 1.63s file.
         specialExecuted: { src: 'sfx/racing-sfx/mixkit-flying-fast-swoosh-1469.wav', end: 1.13 }
     },
     space: {
@@ -2216,21 +2164,16 @@ function animateBoardDrop(fallDistances) {
 async function processMatchCycles() {
     let groups = findMatchGroups();
     let matches = flattenGroups(groups);
-    // One-shot guard so a long cascade sitting at comboChain>=5 doesn't
-    // call levelUpFever() again on every remaining iteration.
     let comboFeverTriggeredThisCascade = false;
 
     while (matches.length > 0) {
+        // Live Performance: one Fever trigger per cascade when combo hits 5+
         if (currentMode === 'livePerformance' && !comboFeverTriggeredThisCascade && comboChain >= 5) {
             comboFeverTriggeredThisCascade = true;
             levelUpFever();
         }
 
-        if (comboChain > 1) {
-            updatePortrait('combo');
-        } else {
-            updatePortrait('happy');
-        }
+        updatePortrait(comboChain > 1 ? 'combo' : 'happy');
 
         if (matches.length > 4) {
             AudioSynth.playMegaMatch();
@@ -2239,31 +2182,20 @@ async function processMatchCycles() {
             AudioSynth.playMatch();
         }
 
-        let basePoints = matches.length * 50;
-        // Chain multiplier: +50% per cascade step beyond the first, so a
-        // 5-step chain (the same length that triggers Live Performance's
-        // early Fever entry) lands on a round 3x — escalating enough to
-        // reward long cascades without runaway scores on huge boards.
-        let chainMultiplier = 1 + (comboChain - 1) * 0.5;
-        let feverMultiplier = getFeverMultiplier();
-        // Space Singer's Cosmic Gravity: matches made during its 10s
-        // free-move window score 50% extra ("extra points are rewarded
-        // during the use of the special if icons match").
-        let cosmicMultiplier = freeMoveModeActive ? 1.5 : 1;
-        let awardedPoints = Math.round(basePoints * chainMultiplier * feverMultiplier * cosmicMultiplier);
+        // Scoring
+        const basePoints = matches.length * 50;
+        const chainMultiplier = 1 + (comboChain - 1) * 0.5;
+        const feverMultiplier = getFeverMultiplier();
+        const cosmicMultiplier = freeMoveModeActive ? 1.5 : 1;
+        const awardedPoints = Math.round(basePoints * chainMultiplier * feverMultiplier * cosmicMultiplier);
 
         score += awardedPoints;
         document.getElementById('scoreDisplay').innerText = String(score).padStart(6, '0');
         document.getElementById('comboDisplay').innerText = comboChain;
         bestCombo = Math.max(bestCombo, comboChain);
 
+        // Fever meter (only when not already in Fever)
         if (!isFeverMode) {
-            // Middle-ground fill rate: fast enough that a level-up comes up
-            // regularly in normal play, slow enough that the every-4/
-            // every-10 level milestones still feel earned rather than
-            // constant. (Original rate was 3.5; a first pass at 1.2 to
-            // protect those milestones turned out too slow.) Miku's Harmony
-            // Wave doubles this for its 25s window.
             feverMeter += matches.length * 2.3 * (mikuHarmonyBoostActive ? 2 : 1);
             if (feverMeter >= 100) {
                 feverMeter = 100;
@@ -2273,18 +2205,10 @@ async function processMatchCycles() {
             }
         }
 
-        // Per-group bonuses: move/time bonus-icon reward, mana charging, and
-        // the Live Performance icon-challenge counter — all evaluated per
-        // GROUP (not the flattened list) since these depend on how many
-        // separate bonus-icon runs cleared this cascade, not how big any
-        // one of them was.
+        // Per-group bonuses (bonus icons, mana, icon-challenge)
         const config = CHARACTER_THEMES[currentCharacter];
         groups.forEach(group => {
             if (group.type === 5) {
-                // Flat +6 per separate bonus-icon group cleared — matching
-                // more than one group in the same cascade stacks additively
-                // (6, then 6+6, then 6+6+6...) since each group runs this
-                // block once, rather than scaling with a single group's size.
                 const gain = 6;
                 if (currentMode === 'stageClear') {
                     movesLeft += gain;
@@ -2302,20 +2226,18 @@ async function processMatchCycles() {
             if (challengeType === 'iconChallenge' && group.type === challengeIconType) {
                 challengeIconProgress++;
                 updateChallengeHud();
-                if (challengeIconProgress >= 4) {
-                    endIconChallenge(true);
-                }
+                if (challengeIconProgress >= 4) endIconChallenge(true);
             }
         });
 
+        // Clear matched cells + particles + obstacles
         let obstacleCleared = false;
         matches.forEach(m => {
             const cell = document.getElementById(`cell-${m.row}-${m.col}`);
-            if (cell) {
-                cell.classList.add('cell-clearing');
-            }
+            if (cell) cell.classList.add('cell-clearing');
             spawnMatchParticles(m.row, m.col, config.baseColor);
-            if (boardState[m.row][m.col] && boardState[m.row][m.col].obstacle) {
+
+            if (boardState[m.row][m.col]?.obstacle) {
                 obstacleTilesRemaining = Math.max(0, obstacleTilesRemaining - 1);
                 obstacleCleared = true;
                 chargeMana(10);
@@ -2324,15 +2246,6 @@ async function processMatchCycles() {
             boardState[m.row][m.col] = null;
         });
 
-        // Checked right here (inside the loop, immediately after tiles
-        // actually clear) rather than after the loop exits or at the end
-        // of the function — a normal 3-in-a-row can sweep up one of
-        // Sakura's Blossom Blast detonator tiles same as any other icon,
-        // and checkLevelProgress()/the movesLeft check below can both
-        // `return` early once the loop is done, which would skip a check
-        // placed after them. See updateBlossomBlastNotice()'s own comment
-        // for why this reads the board live instead of decrementing a
-        // separate counter.
         updateBlossomBlastNotice();
 
         if (matches.length > 0) {
@@ -2346,16 +2259,13 @@ async function processMatchCycles() {
             }
         }
 
-        // Long enough for .cell-clearing's shrink/fade and the particle
-        // burst to actually read before the next step tears the DOM down —
-        // bumped from 250/200 alongside slowing those animations down, so
-        // clears don't just look like an instant cut anymore.
+        // Wait for clear animation, then collapse + refill + drop animation
         await new Promise(resolve => setTimeout(resolve, cascadeDelay(400)));
 
         const fallDistances = collapseAndRefill();
-
         renderBoard();
         animateBoardDrop(fallDistances);
+
         await new Promise(resolve => setTimeout(resolve, cascadeDelay(350)));
 
         comboChain++;
@@ -2363,6 +2273,7 @@ async function processMatchCycles() {
         matches = flattenGroups(groups);
     }
 
+    // Cascade finished
     if (checkLevelProgress()) return;
 
     if (currentMode === 'stageClear' && movesLeft <= 0) {
@@ -2370,50 +2281,7 @@ async function processMatchCycles() {
         return;
     }
 
-    if (!hasPossibleMoves()) {
-        await handleDeadlock();
-    }
-
     isProcessing = false;
-}
-
-/**
- * Called from processMatchCycles() when a cascade settles into a dead board
- * (no possible moves). Leisure gets a free reshuffle, same as always — it's
- * meant to stay endless and stakes-free. Stage Clear/Live Performance pay
- * for it (a move or ~5 seconds) so a deadlock actually costs something,
- * unless a Fever Mode bonus round is currently active (feverBonusRoundActive
- * already means moves/time are free right now — see executeSwap()/
- * startPerformanceTimer() — so a forced reshuffle during that window stays
- * free too, for consistency). If the penalty would drop the resource to 0
- * or below, the run ends right there instead of reshuffling.
- *
- * Note: Sakura's Blossom Blast, 25-ji's Void World, and Racing's Turbo
- * Blitz all end by calling processMatchCycles() too, so if one of their
- * board mutations happens to leave a dead board, this same penalty applies
- * as a side effect of using the special — not special-cased away, since
- * moves/time are meant to feel like real stakes regardless of how the
- * deadlock happened.
- */
-async function handleDeadlock() {
-    updatePortrait('worried');
-    await new Promise(resolve => setTimeout(resolve, 1500));
-
-    if (currentMode === 'stageClear' && !feverBonusRoundActive) {
-        movesLeft -= 1;
-        document.getElementById('movesDisplay').innerText = movesLeft;
-        if (movesLeft <= 0) { gameOverScreen(hasEarnedVictory ? 'victory' : 'normal'); return; }
-        showBonusPopup(t('popup.deadlockMove'), CHARACTER_THEMES[currentCharacter].baseColor);
-    } else if (currentMode === 'livePerformance' && !feverBonusRoundActive) {
-        timeLeft = Math.max(0, timeLeft - 5);
-        document.getElementById('timeDisplay').innerText = Math.ceil(timeLeft);
-        // Live Performance has no fail state now — the penalty draining the
-        // clock to 0 still counts as a completed (if unlucky) performance.
-        if (timeLeft <= 0) { gameOverScreen('victory'); return; }
-        showBonusPopup(t('popup.deadlockSeconds'), CHARACTER_THEMES[currentCharacter].baseColor);
-    }
-
-    reshuffleBoard(true);
 }
 
 /**

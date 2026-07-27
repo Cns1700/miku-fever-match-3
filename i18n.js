@@ -1,38 +1,3 @@
-/**
- * ============================================================================
- * LANGUAGE / TRANSLATION SYSTEM (English / Japanese)
- * ============================================================================
- * Plain dictionary + a toggle button — no build step, works fine loaded via
- * a plain <script> tag under file://. Must load BEFORE miku-logic.js (see
- * index.html), which calls t()/applyTranslations() throughout.
- *
- * >>> EDIT HERE to change wording in either language, or to add a new
- * language: copy the `en` block, translate every value, and add the language
- * code to LANGUAGE_ORDER below so the toggle button cycles through it too.
- *
- * HOW IT WORKS
- * - Static HTML text: elements carry a `data-i18n="dotted.key.path"`
- *   attribute (see index.html). applyTranslations() walks every one of
- *   those on page load and whenever the language changes, and sets its
- *   textContent from the dictionary. `data-i18n-attr="title"` (or
- *   "aria-label", "placeholder", etc.) on the same element translates that
- *   attribute instead of textContent — see e.g. #specialBtn's tooltip.
- * - Dynamic JS-generated text (bonus popups, results screen, certificates):
- *   call t('dotted.key.path', { placeholder: value }) directly wherever
- *   that string is built — see miku-logic.js.
- * - {placeholders} inside a string are replaced from the second argument to
- *   t(). Missing keys fall back to the English string (logged to console
- *   once) so a translation gap never shows a blank UI.
- *
- * SCOPE NOTE: individual credit-list attributions (real people's names/
- * sites in the footer) are intentionally left untranslated, since they're
- * proper nouns, not UI copy. Filename-derived board-icon names used inside
- * a few popups/tooltips (see humanizeIconName() in miku-logic.js) are also
- * left in English — translating those would need a full per-icon-file
- * translation table, which wasn't worth the added complexity for text that
- * only appears briefly inside a toast.
- */
-
 const LANGUAGE_ORDER = ['en', 'ja'];
 const LANGUAGE_LABELS = { en: 'EN', ja: '日本語' };
 
@@ -138,7 +103,7 @@ const I18N = {
             currentCombo: "Current Combo",
             instructionTip: "“Click or swipe two neighboring items to align 3 of a kind!”",
             footerTip1: "Fever milestones & timed challenges grant bonus moves/time!",
-            footerTip2: "No moves? We'll auto-reshuffle!",
+            footerTip2: "Chain matches for bigger scores!",
             footerTipLeisure: "Just relax and enjoy the cascades ✨"
         },
         special: {
@@ -163,14 +128,14 @@ const I18N = {
                 "The target score climbs a little every 10 stages.",
                 "Fill the Fever bar for bonus points. Every few levels it triggers a 30s bonus round with free moves.",
                 "Every 10th level grants a big score bonus.",
-                "Stuck with no moves left? The board auto-reshuffles, but it costs you a move."
+                "Reach the target score before your moves run out."
             ],
             livePerformance: [
                 "Score as much as you can before your 90-second clock hits 0.",
                 "5x combos (or a full Fever bar) level up Fever. Every few levels it triggers a bonus round that freezes your clock.",
                 "Every 10th level adds +30 seconds.",
                 "Running low on time makes the board noticeably harder — watch the final stretch!",
-                "Stuck with no moves left? The board auto-reshuffles, but it costs you 5 seconds."
+                "Race the timer — matches add time back."
             ],
             leisure: [
                 "No moves, no timer, no game-overs — just relax and match at your own pace.",
@@ -242,8 +207,6 @@ const I18N = {
             iconChallengeWin: "Challenge Complete! +25s",
             bonusIconMoves: "+{gain} Moves",
             bonusIconSeconds: "+{gain}s",
-            deadlockMove: "-1 Move (Board Reshuffled)",
-            deadlockSeconds: "-5s (Board Reshuffled)",
             harmonyWave: "Harmony Wave! Fever Gain x2 — 25s",
             blossomBlast: "Blossom Blast! Click a flashing tile to detonate",
             glacialFreezeSeconds: "+8s",
@@ -387,7 +350,7 @@ const I18N = {
             currentCombo: "現在のコンボ",
             instructionTip: "「隣り合う2つのアイテムをクリックまたはスワイプして、3つ揃えよう！」",
             footerTip1: "フィーバーの節目やタイムチャレンジでボーナス手数・時間がもらえる！",
-            footerTip2: "手数がなくなったら自動でシャッフルします！",
+            footerTip2: "連鎖で高得点を狙おう！",
             footerTipLeisure: "肩の力を抜いて、連鎖をゆっくり楽しんでね ✨"
         },
         special: {
@@ -412,14 +375,14 @@ const I18N = {
                 "目標スコアは10ステージごとに少しずつ上がる。",
                 "フィーバーバーを満タンにするとボーナス点がもらえる。数レベルごとに、手数無制限の30秒ボーナスラウンドが発生。",
                 "10レベルごとに大きなスコアボーナスがもらえる。",
-                "手数がなくなった？盤面は自動でシャッフルされるが、手数を1つ消費する。"
+                "手数がなくなる前に目標スコアを達成しよう。"
             ],
             livePerformance: [
                 "90秒のタイマーが0になる前に、できるだけ高いスコアを稼ごう。",
                 "5連コンボ（またはフィーバーバー満タン）でフィーバーレベルアップ。数レベルごとに、タイマーが止まるボーナスラウンドが発生。",
                 "10レベルごとに+30秒。",
                 "残り時間が少なくなると盤面が明らかに難しくなる — 終盤は要注意！",
-                "手数がなくなった？盤面は自動でシャッフルされるが、5秒を消費する。"
+                "制限時間と勝負。マッチで時間が戻る。"
             ],
             leisure: [
                 "手数制限もタイマーもゲームオーバーもなし — 自分のペースでゆったりマッチしよう。",
@@ -491,8 +454,6 @@ const I18N = {
             iconChallengeWin: "チャレンジ達成！+25秒",
             bonusIconMoves: "+{gain}手",
             bonusIconSeconds: "+{gain}秒",
-            deadlockMove: "-1手（盤面をシャッフルしました）",
-            deadlockSeconds: "-5秒（盤面をシャッフルしました）",
             harmonyWave: "ハーモニーウェーブ！フィーバー獲得量2倍 — 25秒",
             blossomBlast: "ブロッサムブラスト！点滅するタイルをクリックして起爆",
             glacialFreezeSeconds: "+8秒",

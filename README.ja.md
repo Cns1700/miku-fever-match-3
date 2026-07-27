@@ -15,10 +15,10 @@
 
 | | |
 |---|---|
-| ![キャラクター選択画面](screenshots/roster.png) | ![クラシック・ミクでプレイ中](screenshots/gameplay.png) |
-| **キャラクター選択画面**<br>*(Character select screen)* | **クラシック・ミクでプレイ中**<br>*(Playing as Classic Miku)* |
+| ![キャラクター選択画面](screenshots/roster.png) | ![ニーゴミクでプレイ中](screenshots/gameplay.png) |
+| **キャラクター選択画面**<br>*(Character select screen)* | **ニーゴミクでプレイ中**<br>*(Playing as 25-ji Miku)* |
 | ![コズミックグラビティ発動中](screenshots/special.png) | ![ステージクリア勝利画面](screenshots/victory.png) |
-| **コズミックグラビティ発動中**<br>*(Cosmic Gravity activating)* | **ステージクリア勝利画面**<br>*(Stage Clear victory screen)* |
+| **コズミックグラビティ発動中**<br>*(Cosmic Gravity Activating)* | **勝利画面**<br>*(Victory Screen)* |
 
 ## 特徴
 
@@ -54,8 +54,8 @@
 
 ## このプロジェクトについて
 
-- itch.io：*(公開後にリンクを追加予定)*
-- Pixiv：*(公開後にリンクを追加予定)*
+- itch.io：https://mizuchisylph.itch.io/miku-fever
+- Pixiv：https://www.pixiv.net/en/artworks/147655266
 
 ---
 
